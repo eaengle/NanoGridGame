@@ -47,6 +47,7 @@ java -jar nanogrid-app/target/nanogrid-app-1.0-SNAPSHOT.jar
 - New saves use versioned JSON when the filename ends in `.json`.
 - Existing XML saves still load and can still be written by using a `.xml` filename.
 - The Swing UI renders the puzzle board through a custom painted board view.
+- The desktop shell includes a toolbar, timer, move counter, keyboard shortcuts, and fill/mark/erase/cycle modes.
 
 ## Core model direction
 

@@ -33,6 +33,7 @@ class NanoGridBoardView extends JComponent {
 
     private final GameController controller;
     private final Runnable winHandler;
+    private final Runnable changeHandler;
 
     private Rectangle boardBounds = new Rectangle();
     private int cellSize = 24;
@@ -41,13 +42,16 @@ class NanoGridBoardView extends JComponent {
     private Point hoverCell;
     private Point measureStart;
     private Point measureEnd;
+    private Point lastAppliedCell;
     private char dragState;
+    private InteractionMode interactionMode = InteractionMode.CYCLE;
     private boolean showSolution;
     private boolean winAnnounced;
 
-    NanoGridBoardView(GameController controller, Runnable winHandler) {
+    NanoGridBoardView(GameController controller, Runnable winHandler, Runnable changeHandler) {
         this.controller = controller;
         this.winHandler = winHandler;
+        this.changeHandler = changeHandler;
         setOpaque(true);
         setBackground(BACKGROUND);
         setFocusable(true);
@@ -61,6 +65,7 @@ class NanoGridBoardView extends JComponent {
         winAnnounced = false;
         measureStart = null;
         measureEnd = null;
+        lastAppliedCell = null;
         revalidate();
         repaint();
     }
@@ -68,6 +73,10 @@ class NanoGridBoardView extends JComponent {
     void setShowSolution(boolean showSolution) {
         this.showSolution = showSolution;
         repaint();
+    }
+
+    void setInteractionMode(InteractionMode interactionMode) {
+        this.interactionMode = interactionMode;
     }
 
     @Override
@@ -270,6 +279,14 @@ class NanoGridBoardView extends JComponent {
     }
 
     private void applyCellState(Point cell, char state) {
+        if (lastAppliedCell != null && lastAppliedCell.equals(cell)) {
+            return;
+        }
+        char current = controller.getCellState(cell.x, cell.y);
+        if (current == state || (current == 0 && state == 0)) {
+            lastAppliedCell = cell;
+            return;
+        }
         if (state == NanoGridBoard.FillChar) {
             controller.setCell(cell.x, cell.y);
         } else if (state == NanoGridBoard.MarkChar) {
@@ -277,8 +294,10 @@ class NanoGridBoardView extends JComponent {
         } else {
             controller.clearCell(cell.x, cell.y);
         }
+        lastAppliedCell = cell;
         showSolution = false;
         repaint();
+        changeHandler.run();
         if (!winAnnounced && controller.checkWin()) {
             showSolution = true;
             winAnnounced = true;
@@ -287,6 +306,15 @@ class NanoGridBoardView extends JComponent {
     }
 
     private char nextState(Point cell) {
+        if (interactionMode == InteractionMode.FILL) {
+            return NanoGridBoard.FillChar;
+        }
+        if (interactionMode == InteractionMode.MARK) {
+            return NanoGridBoard.MarkChar;
+        }
+        if (interactionMode == InteractionMode.ERASE) {
+            return 0;
+        }
         char current = controller.getCellState(cell.x, cell.y);
         if (current == NanoGridBoard.MarkChar) {
             return 0;
@@ -320,6 +348,7 @@ class NanoGridBoardView extends JComponent {
             } else if (SwingUtilities.isLeftMouseButton(event)) {
                 measureStart = null;
                 measureEnd = null;
+                lastAppliedCell = null;
                 dragState = nextState(cell);
                 applyCellState(cell, dragState);
             }
