@@ -12,6 +12,7 @@ public class NanoGridGame {
     private NanoGridBoard board;
     private PlayerGrid playerGrid;
     private NanoGridParameters settings;
+    private GameMetadata metadata = new GameMetadata();
 
     public NanoGridGame(NanoGridParameters p) {
         board = new NanoGridBoard(p);
@@ -24,6 +25,7 @@ public class NanoGridGame {
         settings.setRows(rows);
         board.create(cols, rows);
         playerGrid = new PlayerGrid(cols, rows);
+        metadata = new GameMetadata();
     }
 
     public void create(int sz) {
@@ -40,6 +42,14 @@ public class NanoGridGame {
 
     public NanoGridParameters getSettings() {
         return settings;
+    }
+
+    public GameMetadata getMetadata() {
+        return new GameMetadata(metadata);
+    }
+
+    public void setMetadata(GameMetadata metadata) {
+        this.metadata = new GameMetadata(metadata);
     }
 
     public void clearCell(int c, int r) {
@@ -120,6 +130,8 @@ public class NanoGridGame {
     }
 
     public void saveGame(File output) throws IOException {
+        String currentSaveType = metadata.getSaveType();
+        metadata.setSaveType(GameMetadata.TYPE_GAME);
         if (usesJsonExtension(output)) {
             NanoGridJsonFile file = new NanoGridJsonFile(this);
             file.serialize(output);
@@ -127,15 +139,26 @@ public class NanoGridGame {
             NanoGridFile file = new NanoGridFile(this);
             file.serialize(output);
         }
+        metadata.setSaveType(currentSaveType);
     }
 
     public void savePuzzle(File output) throws IOException {
         PlayerGrid currentPlayerGrid = playerGrid;
+        GameMetadata currentMetadata = metadata;
         playerGrid = new PlayerGrid(settings.getColumns(), settings.getRows());
+        metadata = new GameMetadata();
+        metadata.setSaveType(GameMetadata.TYPE_PUZZLE);
         try {
-            saveGame(output);
+            if (usesJsonExtension(output)) {
+                NanoGridJsonFile file = new NanoGridJsonFile(this);
+                file.serialize(output);
+            } else {
+                NanoGridFile file = new NanoGridFile(this);
+                file.serialize(output);
+            }
         } finally {
             playerGrid = currentPlayerGrid;
+            metadata = currentMetadata;
         }
     }
 

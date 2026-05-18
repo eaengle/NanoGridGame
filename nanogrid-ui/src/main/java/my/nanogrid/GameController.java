@@ -3,6 +3,7 @@ package my.nanogrid;
 import nanogridgame.NanoGridBoard;
 import nanogridgame.NanoGridGame;
 import nanogridgame.NanoGridParameters;
+import nanogridgame.GameMetadata;
 
 import java.io.File;
 import java.io.IOException;
@@ -58,6 +59,14 @@ public class GameController {
 
     public int getIncorrectMoves() {
         return game.getIncorrectMoves();
+    }
+
+    public GameMetadata getMetadata() {
+        return game.getMetadata();
+    }
+
+    public void setMetadata(GameMetadata metadata) {
+        game.setMetadata(metadata);
     }
 
     public void loadGame(File file) throws IOException {

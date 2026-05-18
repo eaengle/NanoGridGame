@@ -24,6 +24,11 @@ class NanoGridJsonFile {
         json.append("{\n");
         json.append("  \"format\": \"NanoGridGame\",\n");
         json.append("  \"version\": ").append(SAVE_VERSION).append(",\n");
+        json.append("  \"metadata\": {\n");
+        appendSetting(json, "saveType", game.getMetadata().getSaveType(), true);
+        appendSetting(json, "elapsedSeconds", game.getMetadata().getElapsedSeconds(), true);
+        appendSetting(json, "moveCount", game.getMetadata().getMoveCount(), false);
+        json.append("  },\n");
         json.append("  \"settings\": {\n");
         appendSetting(json, "columns", game.getSettings().getColumns(), true);
         appendSetting(json, "rows", game.getSettings().getRows(), true);
@@ -48,6 +53,7 @@ class NanoGridJsonFile {
             validateVersion(json);
             NanoGridParameters settings = deserializeSettings(json);
             game.updateSettings(settings);
+            game.setMetadata(deserializeMetadata(json));
             game.setBoard(deserializeBoard(json, "board"));
             game.setPlayColumns(deserializeBoard(json, "playColumns"));
             game.setPlayRows(deserializeBoard(json, "playRows"));
@@ -138,6 +144,19 @@ class NanoGridJsonFile {
         return settings;
     }
 
+    private GameMetadata deserializeMetadata(String json) {
+        GameMetadata metadata = new GameMetadata();
+        try {
+            String metadataJson = readObject(json, "metadata");
+            metadata.setSaveType(readString(metadataJson, "saveType", metadata.getSaveType()));
+            metadata.setElapsedSeconds(readLong(metadataJson, "elapsedSeconds", metadata.getElapsedSeconds()));
+            metadata.setMoveCount(readInt(metadataJson, "moveCount", metadata.getMoveCount()));
+        } catch (IllegalArgumentException ex) {
+            return metadata;
+        }
+        return metadata;
+    }
+
     private char[][] deserializeBoard(String json, String name) {
         List<String> rows = readStringArray(json, name);
         if (rows.isEmpty()) {
@@ -154,6 +173,14 @@ class NanoGridJsonFile {
         Matcher matcher = Pattern.compile("\"" + Pattern.quote(name) + "\"\\s*:\\s*(-?\\d+)").matcher(json);
         if (!matcher.find()) {
             throw new IllegalArgumentException(name + " is missing");
+        }
+        return Integer.parseInt(matcher.group(1));
+    }
+
+    private int readInt(String json, String name, int defaultValue) {
+        Matcher matcher = Pattern.compile("\"" + Pattern.quote(name) + "\"\\s*:\\s*(-?\\d+)").matcher(json);
+        if (!matcher.find()) {
+            return defaultValue;
         }
         return Integer.parseInt(matcher.group(1));
     }

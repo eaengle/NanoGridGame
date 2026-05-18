@@ -2,6 +2,7 @@ package my.nanogrid;
 
 import nanogridgame.NanoGridParameters;
 import nanogridgame.PuzzleDifficulty;
+import nanogridgame.GameMetadata;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
@@ -452,7 +453,7 @@ public class NanoGridUI extends JFrame {
             controller.loadGame(loadFile);
             updateGenerationControls(controller.getSettings());
             redraw();
-            resetSessionStats();
+            restoreSessionStats(controller.getMetadata());
             statusLabel.setText("Loaded game");
         } catch (IOException ex) {
             showError("Failed to load game: " + ex.getMessage());
@@ -495,6 +496,7 @@ public class NanoGridUI extends JFrame {
                 file = new File(chooser.getCurrentDirectory(), file.getName() + ".json");
             }
             try {
+                updateGameMetadata();
                 if (includeProgress) {
                     controller.saveGame(file);
                     statusLabel.setText("Saved game");
@@ -633,6 +635,35 @@ public class NanoGridUI extends JFrame {
         setMode(InteractionMode.CYCLE);
     }
 
+    private void restoreSessionStats(GameMetadata metadata) {
+        moveCount = metadata.getMoveCount();
+        undoStack.clear();
+        redoStack.clear();
+        long elapsedSeconds = metadata.getElapsedSeconds();
+        startedAt = System.currentTimeMillis() - elapsedSeconds * 1000;
+        timerLabel.setText(formatElapsed(elapsedSeconds));
+        startTimer();
+        setMode(InteractionMode.CYCLE);
+        statusLabel.setText("Moves: " + moveCount);
+    }
+
+    private void updateGameMetadata() {
+        GameMetadata metadata = controller.getMetadata();
+        metadata.setElapsedSeconds(getElapsedSeconds());
+        metadata.setMoveCount(moveCount);
+        controller.setMetadata(metadata);
+    }
+
+    private long getElapsedSeconds() {
+        return Math.max(0, (System.currentTimeMillis() - startedAt) / 1000);
+    }
+
+    private String formatElapsed(long elapsedSeconds) {
+        long minutes = elapsedSeconds / 60;
+        long seconds = elapsedSeconds % 60;
+        return String.format("%02d:%02d", minutes, seconds);
+    }
+
     private boolean applyGenerationControls(NanoGridParameters settings) {
         settings.setDifficulty((PuzzleDifficulty) difficultyCombo.getSelectedItem());
         settings.setSymmetric(symmetricCheckBox.isSelected());
@@ -662,9 +693,7 @@ public class NanoGridUI extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
                 long elapsedSeconds = (System.currentTimeMillis() - startedAt) / 1000;
-                long minutes = elapsedSeconds / 60;
-                long seconds = elapsedSeconds % 60;
-                timerLabel.setText(String.format("%02d:%02d", minutes, seconds));
+                timerLabel.setText(formatElapsed(elapsedSeconds));
             }
         });
         timer.start();

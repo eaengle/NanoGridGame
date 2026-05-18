@@ -50,6 +50,8 @@ java -jar nanogrid-app/target/nanogrid-app-1.0-SNAPSHOT.jar
 - The desktop shell includes a toolbar, timer, move counter, keyboard shortcuts, and fill/mark/erase/cycle modes.
 - Puzzle generation supports difficulty levels, optional reproducible seeds, and optional symmetry.
 - The UI supports undo and redo for cell changes.
+- Game saves include elapsed time and move count.
+- The packaged UI jar is self-contained and can be launched directly with `java -jar`.
 
 ## Core model direction
 

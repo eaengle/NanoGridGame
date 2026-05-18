@@ -38,6 +38,7 @@ public class NanoGridFile {
             rootElement.setAttribute("version", String.valueOf(SAVE_VERSION));
             doc.appendChild(rootElement);
 
+            serializeMetadata(game.getMetadata(), rootElement, doc);
             serializeSettings(game.getSettings(), rootElement, doc);
             Element e = doc.createElement("Board");
             rootElement.appendChild(e);
@@ -71,6 +72,14 @@ public class NanoGridFile {
         addValue(p.isUseSeed(), "UseSeed", e, doc);
         addValue(p.getSeed(), "Seed", e, doc);
         addValue(p.isSymmetric(), "Symmetric", e, doc);
+    }
+
+    private void serializeMetadata(GameMetadata metadata, Element root, Document doc) {
+        Element e = doc.createElement("Metadata");
+        root.appendChild(e);
+        addValue(metadata.getSaveType(), "SaveType", e, doc);
+        addValue(metadata.getElapsedSeconds(), "ElapsedSeconds", e, doc);
+        addValue(metadata.getMoveCount(), "MoveCount", e, doc);
     }
 
     private void addValue(int val, String name, Element parent, Document doc) {
@@ -121,6 +130,11 @@ public class NanoGridFile {
 
             NodeList settingsNodes = doc.getElementsByTagName("Settings");
             game.updateSettings(deserializeSettings(settingsNodes.item(0)));
+
+            NodeList metadataNodes = doc.getElementsByTagName("Metadata");
+            if (metadataNodes.getLength() > 0) {
+                game.setMetadata(deserializeMetadata(metadataNodes.item(0)));
+            }
 
             NodeList board = doc.getElementsByTagName("Board");
             game.setBoard(deserializeBoard(board.item(0)));
@@ -173,6 +187,24 @@ public class NanoGridFile {
             p.setUseSeed(useSeed);
         }
         return p;
+    }
+
+    private GameMetadata deserializeMetadata(Node lst) {
+        GameMetadata metadata = new GameMetadata();
+        Node n = lst.getFirstChild();
+        while (n != null) {
+            String name = n.getNodeName();
+            String val = n.getTextContent();
+            if ("SaveType".equals(name)) {
+                metadata.setSaveType(val);
+            } else if ("ElapsedSeconds".equals(name)) {
+                metadata.setElapsedSeconds(Long.parseLong(val));
+            } else if ("MoveCount".equals(name)) {
+                metadata.setMoveCount(Integer.parseInt(val));
+            }
+            n = n.getNextSibling();
+        }
+        return metadata;
     }
 
     private char[][] deserializeBoard(Node lst) throws IOException {

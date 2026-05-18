@@ -135,6 +135,10 @@ public class NanoGridGameTest {
     void saveGameRoundTripPreservesBoardSettingsAndProgress(@TempDir Path tempDir) throws Exception {
         game.setCell(0, 0);
         game.setMark(1, 1);
+        GameMetadata metadata = new GameMetadata();
+        metadata.setMoveCount(7);
+        metadata.setElapsedSeconds(123);
+        game.setMetadata(metadata);
         File saveFile = tempDir.resolve("game.xml").toFile();
 
         game.saveGame(saveFile);
@@ -144,6 +148,9 @@ public class NanoGridGameTest {
 
         assertEquals(5, loaded.getSettings().getColumns());
         assertEquals(5, loaded.getSettings().getRows());
+        assertEquals(GameMetadata.TYPE_GAME, loaded.getMetadata().getSaveType());
+        assertEquals(7, loaded.getMetadata().getMoveCount());
+        assertEquals(123, loaded.getMetadata().getElapsedSeconds());
         assertTrue(game.getBoard().checkWin(loaded.getBoard()));
         assertEquals(NanoGridBoard.FillChar, loaded.getPlayColumns()[0][0]);
         assertEquals(NanoGridBoard.MarkChar, loaded.getPlayColumns()[1][1]);
@@ -157,6 +164,10 @@ public class NanoGridGameTest {
         params.setSeed(24680L);
         params.setSymmetric(true);
         game = new NanoGridGame(params);
+        GameMetadata metadata = new GameMetadata();
+        metadata.setMoveCount(11);
+        metadata.setElapsedSeconds(456);
+        game.setMetadata(metadata);
         game.setCell(0, 0);
         game.setMark(1, 1);
         File saveFile = tempDir.resolve("game.json").toFile();
@@ -172,6 +183,9 @@ public class NanoGridGameTest {
 
         assertEquals(5, loaded.getSettings().getColumns());
         assertEquals(5, loaded.getSettings().getRows());
+        assertEquals(GameMetadata.TYPE_GAME, loaded.getMetadata().getSaveType());
+        assertEquals(11, loaded.getMetadata().getMoveCount());
+        assertEquals(456, loaded.getMetadata().getElapsedSeconds());
         assertEquals(PuzzleDifficulty.HARD, loaded.getSettings().getDifficulty());
         assertTrue(loaded.getSettings().isUseSeed());
         assertEquals(24680L, loaded.getSettings().getSeed());
@@ -204,6 +218,10 @@ public class NanoGridGameTest {
         params.setSeed(13579L);
         params.setSymmetric(true);
         game = new NanoGridGame(params);
+        GameMetadata metadata = new GameMetadata();
+        metadata.setMoveCount(99);
+        metadata.setElapsedSeconds(321);
+        game.setMetadata(metadata);
         game.setCell(0, 0);
         game.setMark(1, 1);
         File saveFile = tempDir.resolve("puzzle.xml").toFile();
@@ -216,6 +234,9 @@ public class NanoGridGameTest {
         NanoGridGame loaded = new NanoGridGame(new NanoGridParameters());
         loaded.loadBoard(saveFile);
 
+        assertEquals(GameMetadata.TYPE_PUZZLE, loaded.getMetadata().getSaveType());
+        assertEquals(0, loaded.getMetadata().getMoveCount());
+        assertEquals(0, loaded.getMetadata().getElapsedSeconds());
         assertEquals(PuzzleDifficulty.EASY, loaded.getSettings().getDifficulty());
         assertTrue(loaded.getSettings().isUseSeed());
         assertEquals(13579L, loaded.getSettings().getSeed());
