@@ -8,8 +8,7 @@ import static nanogridgame.NanoGridBoard.FillChar;
 public class NanoGridGame {
 
     private NanoGridBoard board;
-    private char[][] playBoardColumns;
-    private char[][] playBoardRows;
+    private PlayerGrid playerGrid;
     private NanoGridParameters settings;
 
     public NanoGridGame(NanoGridParameters p) {
@@ -22,8 +21,7 @@ public class NanoGridGame {
         settings.setColumns(cols);
         settings.setRows(rows);
         board.create(cols, rows);
-        playBoardColumns = new char[cols][rows];
-        playBoardRows = new char[rows][cols];
+        playerGrid = new PlayerGrid(cols, rows);
     }
 
     public void create(int sz) {
@@ -43,22 +41,20 @@ public class NanoGridGame {
     }
 
     public void clearCell(int c, int r) {
-        playBoardColumns[c][r] = 0;
-        playBoardRows[r][c] = 0;
+        playerGrid.clearCell(c, r);
     }
 
     public void setCell(int c, int r) {
-        playBoardColumns[c][r] = NanoGridBoard.FillChar;
-        playBoardRows[r][c] = NanoGridBoard.FillChar;
+        playerGrid.setCell(c, r, CellState.FILLED);
     }
 
     public void setMark(int c, int r) {
-        playBoardColumns[c][r] = NanoGridBoard.MarkChar;
-        playBoardRows[r][c] = NanoGridBoard.MarkChar;
+        playerGrid.setCell(c, r, CellState.MARKED);
     }
 
     public boolean checkWin() {
         Integer[][] cols = board.getColumnCounts();
+        char[][] playBoardColumns = getPlayColumns();
         for (int c = 0; c < cols.length; c++) {
             Integer[] cnts = getCellCount(playBoardColumns[c]);
             if (!areEqual(cnts, cols[c])) {
@@ -66,6 +62,7 @@ public class NanoGridGame {
             }
         }
         Integer[][] rows = board.getRowCounts();
+        char[][] playBoardRows = getPlayRows();
         for (int r = 0; r < rows.length; r++) {
             Integer[] cnts = getCellCount(playBoardRows[r]);
             if (!areEqual(cnts, rows[r])) {
@@ -112,8 +109,7 @@ public class NanoGridGame {
 
     public void resetBoard(File loadFile) throws IOException {
         loadBoard(loadFile);
-        playBoardColumns = new char[settings.getColumns()][settings.getRows()];
-        playBoardRows = new char[settings.getRows()][settings.getColumns()];
+        playerGrid = new PlayerGrid(settings.getColumns(), settings.getRows());
     }
 
     public void saveGame(File output) throws IOException {
@@ -122,15 +118,12 @@ public class NanoGridGame {
     }
 
     public void savePuzzle(File output) throws IOException {
-        char[][] currentPlayColumns = playBoardColumns;
-        char[][] currentPlayRows = playBoardRows;
-        playBoardColumns = new char[settings.getColumns()][settings.getRows()];
-        playBoardRows = new char[settings.getRows()][settings.getColumns()];
+        PlayerGrid currentPlayerGrid = playerGrid;
+        playerGrid = new PlayerGrid(settings.getColumns(), settings.getRows());
         try {
             saveGame(output);
         } finally {
-            playBoardColumns = currentPlayColumns;
-            playBoardRows = currentPlayRows;
+            playerGrid = currentPlayerGrid;
         }
     }
 
@@ -145,42 +138,34 @@ public class NanoGridGame {
     }
 
     public char[][] getPlayColumns() {
-        return playBoardColumns;
+        return playerGrid.toColumnChars();
     }
 
     void setPlayColumns(char[][] cols) {
-        playBoardColumns = normalizePlayBoard(cols);
+        playerGrid = PlayerGrid.fromColumns(cols);
     }
 
     char[][] getPlayRows() {
-        return playBoardRows;
+        return playerGrid.toRowChars();
     }
 
     public void setPlayRows(char[][] rows) {
-        playBoardRows = normalizePlayBoard(rows);
+        playerGrid = PlayerGrid.fromRows(rows);
     }
 
-    private char[][] normalizePlayBoard(char[][] board) {
-        char[][] normalized = new char[board.length][board[0].length];
-        for (int c = 0; c < board.length; c++) {
-            for (int r = 0; r < board[c].length; r++) {
-                char ch = board[c][r];
-                normalized[c][r] = ch == '_' ? 0 : ch;
-            }
-        }
-        return normalized;
+    public Puzzle getPuzzle() {
+        return Puzzle.fromBoard(board);
+    }
+
+    public PlayerGrid getPlayerGrid() {
+        return PlayerGrid.fromColumns(getPlayColumns());
+    }
+
+    public GameSession getSession() {
+        return new GameSession(getPuzzle(), getPlayerGrid());
     }
 
     public int getIncorrectMoves() {
-        int cnt = 0;
-        for (int c = 0; c < settings.getColumns(); c++) {
-            for (int r = 0; r < settings.getRows(); r++) {
-                if (board.getCell(c, r) != NanoGridBoard.FillChar &&
-                        playBoardColumns[c][r] == NanoGridBoard.FillChar) {
-                    ++cnt;
-                }
-            }
-        }
-        return cnt;
+        return getSession().getIncorrectMoves();
     }
 }

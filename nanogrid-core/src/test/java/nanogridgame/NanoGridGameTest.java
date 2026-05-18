@@ -81,6 +81,22 @@ public class NanoGridGameTest {
     }
 
     @Test
+    void exposesPuzzleAndPlayerGridSnapshots() {
+        game.setCell(0, 0);
+        game.setMark(1, 1);
+
+        Puzzle puzzle = game.getPuzzle();
+        PlayerGrid playerGrid = game.getPlayerGrid();
+        GameSession session = game.getSession();
+
+        assertEquals(5, puzzle.getColumns());
+        assertEquals(5, puzzle.getRows());
+        assertEquals(CellState.FILLED, playerGrid.getCell(0, 0));
+        assertEquals(CellState.MARKED, playerGrid.getCell(1, 1));
+        assertEquals(CellState.FILLED, session.getPlayerGrid().getCell(0, 0));
+    }
+
+    @Test
     void incorrectMoveCountIncreasesForWrongFill() {
         // Fill every cell; some will be wrong
         NanoGridBoard board = game.getBoard();

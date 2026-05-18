@@ -44,3 +44,14 @@ java -jar nanogrid-app/target/nanogrid-app-1.0-SNAPSHOT.jar
 - `Save Puzzle...` writes the puzzle with empty player progress.
 - `Load Game...` restores both the puzzle and player progress.
 - `Load Puzzle...` loads the puzzle and starts with empty player progress.
+
+## Core model direction
+
+The core now has explicit domain types that can gradually replace raw `char[][]`
+usage in the UI and persistence layers:
+
+- `CellState` represents empty, filled, and marked player cells.
+- `BoardCoordinate` identifies a board position.
+- `Puzzle` is an immutable snapshot of the solution and its clues.
+- `PlayerGrid` owns mutable player progress and keeps row/column views synchronized.
+- `GameSession` combines a puzzle with player progress and game-rule operations.
