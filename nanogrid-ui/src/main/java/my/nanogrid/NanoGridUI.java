@@ -36,6 +36,8 @@ import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayDeque;
+import java.util.Deque;
 
 import static javax.swing.JOptionPane.OK_CANCEL_OPTION;
 import static javax.swing.JOptionPane.OK_OPTION;
@@ -58,8 +60,12 @@ public class NanoGridUI extends JFrame {
     private Timer timer;
     private long startedAt;
     private int moveCount;
+    private final Deque<CellMove> undoStack = new ArrayDeque<>();
+    private final Deque<CellMove> redoStack = new ArrayDeque<>();
 
     private Action newPuzzleAction;
+    private Action undoAction;
+    private Action redoAction;
     private Action refreshAction;
     private Action optionsAction;
     private Action loadGameAction;
@@ -157,10 +163,10 @@ public class NanoGridUI extends JFrame {
             public void run() {
                 winGame();
             }
-        }, new Runnable() {
+        }, new CellMoveListener() {
             @Override
-            public void run() {
-                recordMove();
+            public void cellChanged(CellMove move) {
+                recordMove(move);
             }
         });
         mainPanel.removeAll();
@@ -174,6 +180,18 @@ public class NanoGridUI extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
                 reset();
+            }
+        };
+        undoAction = new AbstractAction("Undo") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                undo();
+            }
+        };
+        redoAction = new AbstractAction("Redo") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                redo();
             }
         };
         refreshAction = new AbstractAction("Refresh") {
@@ -267,6 +285,11 @@ public class NanoGridUI extends JFrame {
         file.add(new JMenuItem(exitAction));
         menuBar.add(file);
 
+        JMenu edit = new JMenu("Edit");
+        edit.add(new JMenuItem(undoAction));
+        edit.add(new JMenuItem(redoAction));
+        menuBar.add(edit);
+
         JMenu settings = new JMenu("Settings");
         settings.add(new JMenuItem(optionsAction));
         settings.add(new JMenuItem(refreshAction));
@@ -291,6 +314,8 @@ public class NanoGridUI extends JFrame {
         JToolBar toolBar = new JToolBar();
         toolBar.setFloatable(false);
         toolBar.add(newPuzzleAction);
+        toolBar.add(undoAction);
+        toolBar.add(redoAction);
         toolBar.add(refreshAction);
         toolBar.addSeparator();
         toolBar.add(new JLabel("Difficulty "));
@@ -362,6 +387,8 @@ public class NanoGridUI extends JFrame {
 
     private void installShortcuts() {
         bind(KeyEvent.VK_N, InputEvent.CTRL_DOWN_MASK, "new", newPuzzleAction);
+        bind(KeyEvent.VK_Z, InputEvent.CTRL_DOWN_MASK, "undo", undoAction);
+        bind(KeyEvent.VK_Y, InputEvent.CTRL_DOWN_MASK, "redo", redoAction);
         bind(KeyEvent.VK_O, InputEvent.CTRL_DOWN_MASK, "load", loadGameAction);
         bind(KeyEvent.VK_S, InputEvent.CTRL_DOWN_MASK, "save", saveGameAction);
         bind(KeyEvent.VK_R, InputEvent.CTRL_DOWN_MASK, "refresh", refreshAction);
@@ -541,6 +568,46 @@ public class NanoGridUI extends JFrame {
         statusLabel.setText("Board cleared");
     }
 
+    private void undo() {
+        if (undoStack.isEmpty()) {
+            statusLabel.setText("Nothing to undo");
+            return;
+        }
+        CellMove move = undoStack.pop();
+        applyMoveState(move, move.getBefore());
+        redoStack.push(move);
+        statusLabel.setText("Moves: " + moveCount + " (undo)");
+        repaintBoard();
+    }
+
+    private void redo() {
+        if (redoStack.isEmpty()) {
+            statusLabel.setText("Nothing to redo");
+            return;
+        }
+        CellMove move = redoStack.pop();
+        applyMoveState(move, move.getAfter());
+        undoStack.push(move);
+        statusLabel.setText("Moves: " + moveCount + " (redo)");
+        repaintBoard();
+    }
+
+    private void applyMoveState(CellMove move, char state) {
+        if (state == nanogridgame.NanoGridBoard.FillChar) {
+            controller.setCell(move.getColumn(), move.getRow());
+        } else if (state == nanogridgame.NanoGridBoard.MarkChar) {
+            controller.setMark(move.getColumn(), move.getRow());
+        } else {
+            controller.clearCell(move.getColumn(), move.getRow());
+        }
+    }
+
+    private void repaintBoard() {
+        if (boardView != null) {
+            boardView.repaint();
+        }
+    }
+
     private void winGame() {
         stopTimer();
         statusLabel.setText("Solved in " + timerLabel.getText() + " with " + moveCount + " moves");
@@ -548,13 +615,17 @@ public class NanoGridUI extends JFrame {
         displayGame(true);
     }
 
-    private void recordMove() {
+    private void recordMove(CellMove move) {
+        undoStack.push(move);
+        redoStack.clear();
         moveCount++;
         statusLabel.setText("Moves: " + moveCount);
     }
 
     private void resetSessionStats() {
         moveCount = 0;
+        undoStack.clear();
+        redoStack.clear();
         statusLabel.setText("Moves: 0");
         startedAt = System.currentTimeMillis();
         timerLabel.setText("00:00");

@@ -33,7 +33,7 @@ class NanoGridBoardView extends JComponent {
 
     private final GameController controller;
     private final Runnable winHandler;
-    private final Runnable changeHandler;
+    private final CellMoveListener moveListener;
 
     private Rectangle boardBounds = new Rectangle();
     private int cellSize = 24;
@@ -48,10 +48,10 @@ class NanoGridBoardView extends JComponent {
     private boolean showSolution;
     private boolean winAnnounced;
 
-    NanoGridBoardView(GameController controller, Runnable winHandler, Runnable changeHandler) {
+    NanoGridBoardView(GameController controller, Runnable winHandler, CellMoveListener moveListener) {
         this.controller = controller;
         this.winHandler = winHandler;
-        this.changeHandler = changeHandler;
+        this.moveListener = moveListener;
         setOpaque(true);
         setBackground(BACKGROUND);
         setFocusable(true);
@@ -282,8 +282,8 @@ class NanoGridBoardView extends JComponent {
         if (lastAppliedCell != null && lastAppliedCell.equals(cell)) {
             return;
         }
-        char current = controller.getCellState(cell.x, cell.y);
-        if (current == state || (current == 0 && state == 0)) {
+        char before = controller.getCellState(cell.x, cell.y);
+        if (before == state || (before == 0 && state == 0)) {
             lastAppliedCell = cell;
             return;
         }
@@ -297,7 +297,7 @@ class NanoGridBoardView extends JComponent {
         lastAppliedCell = cell;
         showSolution = false;
         repaint();
-        changeHandler.run();
+        moveListener.cellChanged(new CellMove(cell.x, cell.y, before, state));
         if (!winAnnounced && controller.checkWin()) {
             showSolution = true;
             winAnnounced = true;
