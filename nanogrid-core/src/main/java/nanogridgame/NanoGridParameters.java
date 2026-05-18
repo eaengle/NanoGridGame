@@ -7,6 +7,10 @@ public class NanoGridParameters {
     private int maxColumnSquares;
     private int maxRowSquares;
     private int rowBreakChance;
+    private PuzzleDifficulty difficulty;
+    private boolean useSeed;
+    private long seed;
+    private boolean symmetric;
 
     public NanoGridParameters() {
         maxColumnSquares = 5;
@@ -14,6 +18,10 @@ public class NanoGridParameters {
         rowBreakChance = 50;
         columns = 10;
         rows = 10;
+        difficulty = PuzzleDifficulty.MEDIUM;
+        useSeed = false;
+        seed = 0;
+        symmetric = false;
     }
 
     public NanoGridParameters(NanoGridParameters p) {
@@ -22,6 +30,10 @@ public class NanoGridParameters {
         maxColumnSquares = p.maxColumnSquares;
         maxRowSquares = p.maxRowSquares;
         rowBreakChance = p.rowBreakChance;
+        difficulty = p.difficulty;
+        useSeed = p.useSeed;
+        seed = p.seed;
+        symmetric = p.symmetric;
     }
 
     public int getColumns() { return columns; }
@@ -38,4 +50,29 @@ public class NanoGridParameters {
 
     public int getRowBreakChance() { return rowBreakChance; }
     public void setRowBreakChance(int rowBreakChance) { this.rowBreakChance = rowBreakChance; }
+
+    public PuzzleDifficulty getDifficulty() { return difficulty; }
+    public void setDifficulty(PuzzleDifficulty difficulty) {
+        if (difficulty == null) {
+            throw new IllegalArgumentException("difficulty cannot be null");
+        }
+        this.difficulty = difficulty;
+    }
+
+    public boolean isUseSeed() { return useSeed; }
+    public void setUseSeed(boolean useSeed) { this.useSeed = useSeed; }
+
+    public long getSeed() { return seed; }
+    public void setSeed(long seed) {
+        this.seed = seed;
+        this.useSeed = true;
+    }
+
+    public void clearSeed() {
+        this.seed = 0;
+        this.useSeed = false;
+    }
+
+    public boolean isSymmetric() { return symmetric; }
+    public void setSymmetric(boolean symmetric) { this.symmetric = symmetric; }
 }

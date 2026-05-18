@@ -29,7 +29,11 @@ class NanoGridJsonFile {
         appendSetting(json, "rows", game.getSettings().getRows(), true);
         appendSetting(json, "maxColumnSquares", game.getSettings().getMaxColumnSquares(), true);
         appendSetting(json, "maxRowSquares", game.getSettings().getMaxRowSquares(), true);
-        appendSetting(json, "rowBreakChance", game.getSettings().getRowBreakChance(), false);
+        appendSetting(json, "rowBreakChance", game.getSettings().getRowBreakChance(), true);
+        appendSetting(json, "difficulty", game.getSettings().getDifficulty().name(), true);
+        appendSetting(json, "useSeed", game.getSettings().isUseSeed(), true);
+        appendSetting(json, "seed", game.getSettings().getSeed(), true);
+        appendSetting(json, "symmetric", game.getSettings().isSymmetric(), false);
         json.append("  },\n");
         appendBoard(json, "board", game.getBoard().getColumns(), true);
         appendBoard(json, "playColumns", game.getPlayColumns(), true);
@@ -54,6 +58,30 @@ class NanoGridJsonFile {
 
     private void appendSetting(StringBuilder json, String name, int value, boolean comma) {
         json.append("    \"").append(name).append("\": ").append(value);
+        if (comma) {
+            json.append(",");
+        }
+        json.append("\n");
+    }
+
+    private void appendSetting(StringBuilder json, String name, long value, boolean comma) {
+        json.append("    \"").append(name).append("\": ").append(value);
+        if (comma) {
+            json.append(",");
+        }
+        json.append("\n");
+    }
+
+    private void appendSetting(StringBuilder json, String name, boolean value, boolean comma) {
+        json.append("    \"").append(name).append("\": ").append(value);
+        if (comma) {
+            json.append(",");
+        }
+        json.append("\n");
+    }
+
+    private void appendSetting(StringBuilder json, String name, String value, boolean comma) {
+        json.append("    \"").append(name).append("\": \"").append(escape(value)).append("\"");
         if (comma) {
             json.append(",");
         }
@@ -103,6 +131,10 @@ class NanoGridJsonFile {
         settings.setMaxColumnSquares(readInt(settingsJson, "maxColumnSquares"));
         settings.setMaxRowSquares(readInt(settingsJson, "maxRowSquares"));
         settings.setRowBreakChance(readInt(settingsJson, "rowBreakChance"));
+        settings.setDifficulty(PuzzleDifficulty.valueOf(readString(settingsJson, "difficulty", settings.getDifficulty().name())));
+        settings.setSeed(readLong(settingsJson, "seed", settings.getSeed()));
+        settings.setUseSeed(readBoolean(settingsJson, "useSeed", settings.isUseSeed()));
+        settings.setSymmetric(readBoolean(settingsJson, "symmetric", settings.isSymmetric()));
         return settings;
     }
 
@@ -124,6 +156,30 @@ class NanoGridJsonFile {
             throw new IllegalArgumentException(name + " is missing");
         }
         return Integer.parseInt(matcher.group(1));
+    }
+
+    private long readLong(String json, String name, long defaultValue) {
+        Matcher matcher = Pattern.compile("\"" + Pattern.quote(name) + "\"\\s*:\\s*(-?\\d+)").matcher(json);
+        if (!matcher.find()) {
+            return defaultValue;
+        }
+        return Long.parseLong(matcher.group(1));
+    }
+
+    private boolean readBoolean(String json, String name, boolean defaultValue) {
+        Matcher matcher = Pattern.compile("\"" + Pattern.quote(name) + "\"\\s*:\\s*(true|false)").matcher(json);
+        if (!matcher.find()) {
+            return defaultValue;
+        }
+        return Boolean.parseBoolean(matcher.group(1));
+    }
+
+    private String readString(String json, String name, String defaultValue) {
+        Matcher matcher = Pattern.compile("\"" + Pattern.quote(name) + "\"\\s*:\\s*\"([^\"]*)\"").matcher(json);
+        if (!matcher.find()) {
+            return defaultValue;
+        }
+        return matcher.group(1);
     }
 
     private String readObject(String json, String name) {

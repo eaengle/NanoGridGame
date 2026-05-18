@@ -67,11 +67,33 @@ public class NanoGridFile {
         addValue(p.getMaxColumnSquares(), "MaxColumnSquares", e, doc);
         addValue(p.getMaxRowSquares(), "MaxRowSquares", e, doc);
         addValue(p.getRowBreakChance(), "RowBreakChance", e, doc);
+        addValue(p.getDifficulty().name(), "Difficulty", e, doc);
+        addValue(p.isUseSeed(), "UseSeed", e, doc);
+        addValue(p.getSeed(), "Seed", e, doc);
+        addValue(p.isSymmetric(), "Symmetric", e, doc);
     }
 
     private void addValue(int val, String name, Element parent, Document doc) {
         Element child = doc.createElement(name);
         child.appendChild(doc.createTextNode(String.valueOf(val)));
+        parent.appendChild(child);
+    }
+
+    private void addValue(long val, String name, Element parent, Document doc) {
+        Element child = doc.createElement(name);
+        child.appendChild(doc.createTextNode(String.valueOf(val)));
+        parent.appendChild(child);
+    }
+
+    private void addValue(boolean val, String name, Element parent, Document doc) {
+        Element child = doc.createElement(name);
+        child.appendChild(doc.createTextNode(String.valueOf(val)));
+        parent.appendChild(child);
+    }
+
+    private void addValue(String val, String name, Element parent, Document doc) {
+        Element child = doc.createElement(name);
+        child.appendChild(doc.createTextNode(val));
         parent.appendChild(child);
     }
 
@@ -121,6 +143,7 @@ public class NanoGridFile {
 
     private NanoGridParameters deserializeSettings(Node lst) {
         NanoGridParameters p = new NanoGridParameters();
+        Boolean useSeed = null;
         Node n = lst.getFirstChild();
         while (n != null) {
             String name = n.getNodeName();
@@ -135,8 +158,19 @@ public class NanoGridFile {
                 p.setMaxRowSquares(Integer.parseInt(val));
             } else if ("RowBreakChance".equals(name)) {
                 p.setRowBreakChance(Integer.parseInt(val));
+            } else if ("Difficulty".equals(name)) {
+                p.setDifficulty(PuzzleDifficulty.valueOf(val));
+            } else if ("UseSeed".equals(name)) {
+                useSeed = Boolean.parseBoolean(val);
+            } else if ("Seed".equals(name)) {
+                p.setSeed(Long.parseLong(val));
+            } else if ("Symmetric".equals(name)) {
+                p.setSymmetric(Boolean.parseBoolean(val));
             }
             n = n.getNextSibling();
+        }
+        if (useSeed != null) {
+            p.setUseSeed(useSeed);
         }
         return p;
     }

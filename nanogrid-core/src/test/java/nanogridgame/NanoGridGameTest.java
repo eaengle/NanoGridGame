@@ -153,6 +153,10 @@ public class NanoGridGameTest {
 
     @Test
     void saveJsonGameRoundTripPreservesBoardSettingsAndProgress(@TempDir Path tempDir) throws Exception {
+        params.setDifficulty(PuzzleDifficulty.HARD);
+        params.setSeed(24680L);
+        params.setSymmetric(true);
+        game = new NanoGridGame(params);
         game.setCell(0, 0);
         game.setMark(1, 1);
         File saveFile = tempDir.resolve("game.json").toFile();
@@ -168,6 +172,10 @@ public class NanoGridGameTest {
 
         assertEquals(5, loaded.getSettings().getColumns());
         assertEquals(5, loaded.getSettings().getRows());
+        assertEquals(PuzzleDifficulty.HARD, loaded.getSettings().getDifficulty());
+        assertTrue(loaded.getSettings().isUseSeed());
+        assertEquals(24680L, loaded.getSettings().getSeed());
+        assertTrue(loaded.getSettings().isSymmetric());
         assertTrue(game.getBoard().checkWin(loaded.getBoard()));
         assertEquals(NanoGridBoard.FillChar, loaded.getPlayColumns()[0][0]);
         assertEquals(NanoGridBoard.MarkChar, loaded.getPlayColumns()[1][1]);
@@ -192,6 +200,10 @@ public class NanoGridGameTest {
 
     @Test
     void savePuzzleRoundTripPreservesBoardButOmitsProgress(@TempDir Path tempDir) throws Exception {
+        params.setDifficulty(PuzzleDifficulty.EASY);
+        params.setSeed(13579L);
+        params.setSymmetric(true);
+        game = new NanoGridGame(params);
         game.setCell(0, 0);
         game.setMark(1, 1);
         File saveFile = tempDir.resolve("puzzle.xml").toFile();
@@ -204,6 +216,10 @@ public class NanoGridGameTest {
         NanoGridGame loaded = new NanoGridGame(new NanoGridParameters());
         loaded.loadBoard(saveFile);
 
+        assertEquals(PuzzleDifficulty.EASY, loaded.getSettings().getDifficulty());
+        assertTrue(loaded.getSettings().isUseSeed());
+        assertEquals(13579L, loaded.getSettings().getSeed());
+        assertTrue(loaded.getSettings().isSymmetric());
         assertTrue(game.getBoard().checkWin(loaded.getBoard()));
         assertEquals(0, loaded.getPlayColumns()[0][0]);
         assertEquals(0, loaded.getPlayColumns()[1][1]);

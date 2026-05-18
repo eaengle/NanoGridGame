@@ -113,4 +113,99 @@ public class NanoGridBoardTest {
     void maxRowCountsIsNonNegative() {
         assertTrue(board.getMaxRowCounts() >= 0);
     }
+
+    @Test
+    void sameSeedProducesSameBoard() {
+        NanoGridParameters firstParams = new NanoGridParameters();
+        firstParams.setColumns(12);
+        firstParams.setRows(12);
+        firstParams.setDifficulty(PuzzleDifficulty.MEDIUM);
+        firstParams.setSeed(12345L);
+        NanoGridParameters secondParams = new NanoGridParameters(firstParams);
+
+        NanoGridBoard first = new NanoGridBoard(firstParams);
+        NanoGridBoard second = new NanoGridBoard(secondParams);
+
+        assertBoardsEqual(first, second);
+    }
+
+    @Test
+    void differentSeedsProduceDifferentBoards() {
+        NanoGridParameters firstParams = new NanoGridParameters();
+        firstParams.setColumns(12);
+        firstParams.setRows(12);
+        firstParams.setSeed(111L);
+        NanoGridParameters secondParams = new NanoGridParameters(firstParams);
+        secondParams.setSeed(222L);
+
+        NanoGridBoard first = new NanoGridBoard(firstParams);
+        NanoGridBoard second = new NanoGridBoard(secondParams);
+
+        assertFalse(boardsAreEqual(first, second));
+    }
+
+    @Test
+    void symmetricGenerationMirrorsFilledCells() {
+        NanoGridParameters symmetricParams = new NanoGridParameters();
+        symmetricParams.setColumns(11);
+        symmetricParams.setRows(9);
+        symmetricParams.setSeed(123L);
+        symmetricParams.setSymmetric(true);
+
+        NanoGridBoard symmetricBoard = new NanoGridBoard(symmetricParams);
+
+        for (int c = 0; c < symmetricBoard.getColumnSize(); c++) {
+            for (int r = 0; r < symmetricBoard.getRowSize(); r++) {
+                int mirrorCol = symmetricBoard.getColumnSize() - c - 1;
+                int mirrorRow = symmetricBoard.getRowSize() - r - 1;
+                assertEquals(symmetricBoard.getCell(c, r), symmetricBoard.getCell(mirrorCol, mirrorRow));
+            }
+        }
+    }
+
+    @Test
+    void harderDifficultyGeneratesMoreFilledCellsForSameSeed() {
+        NanoGridParameters easyParams = new NanoGridParameters();
+        easyParams.setColumns(24);
+        easyParams.setRows(24);
+        easyParams.setSeed(98765L);
+        easyParams.setDifficulty(PuzzleDifficulty.EASY);
+        NanoGridParameters hardParams = new NanoGridParameters(easyParams);
+        hardParams.setDifficulty(PuzzleDifficulty.HARD);
+
+        NanoGridBoard easy = new NanoGridBoard(easyParams);
+        NanoGridBoard hard = new NanoGridBoard(hardParams);
+
+        assertTrue(countFilled(hard) > countFilled(easy));
+    }
+
+    private void assertBoardsEqual(NanoGridBoard expected, NanoGridBoard actual) {
+        assertTrue(boardsAreEqual(expected, actual));
+    }
+
+    private boolean boardsAreEqual(NanoGridBoard first, NanoGridBoard second) {
+        if (first.getColumnSize() != second.getColumnSize() || first.getRowSize() != second.getRowSize()) {
+            return false;
+        }
+        for (int c = 0; c < first.getColumnSize(); c++) {
+            for (int r = 0; r < first.getRowSize(); r++) {
+                if (first.getCell(c, r) != second.getCell(c, r)) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    private int countFilled(NanoGridBoard board) {
+        int count = 0;
+        for (int c = 0; c < board.getColumnSize(); c++) {
+            for (int r = 0; r < board.getRowSize(); r++) {
+                if (board.getCell(c, r) == NanoGridBoard.FillChar) {
+                    count++;
+                }
+            }
+        }
+        return count;
+    }
 }

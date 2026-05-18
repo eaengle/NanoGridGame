@@ -1,10 +1,14 @@
 package my.nanogrid;
 
 import nanogridgame.NanoGridParameters;
+import nanogridgame.PuzzleDifficulty;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.ButtonGroup;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
 import javax.swing.InputMap;
 import javax.swing.JComponent;
 import javax.swing.JFileChooser;
@@ -21,6 +25,7 @@ import javax.swing.JToggleButton;
 import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
+import javax.swing.JTextField;
 import javax.swing.UIManager;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.BorderLayout;
@@ -42,6 +47,9 @@ public class NanoGridUI extends JFrame {
     private final JLabel statusLabel = new JLabel("Ready");
     private final JLabel timerLabel = new JLabel("00:00");
     private final JLabel modeLabel = new JLabel("Cycle");
+    private final JComboBox<PuzzleDifficulty> difficultyCombo = new JComboBox<>(PuzzleDifficulty.values());
+    private final JCheckBox symmetricCheckBox = new JCheckBox("Symmetric");
+    private final JTextField seedField = new JTextField(9);
 
     private InstructionDialog instructions;
     private GridSizeDialog gridDialog;
@@ -109,12 +117,18 @@ public class NanoGridUI extends JFrame {
     }
 
     public void reset() {
+        if (!applyGenerationControls(controller.getSettings())) {
+            return;
+        }
         controller.newGame();
         redraw();
         resetSessionStats();
     }
 
     public void reset(NanoGridParameters newSettings) {
+        if (!applyGenerationControls(newSettings)) {
+            return;
+        }
         controller.setSettings(newSettings);
         controller.newGame();
         redraw();
@@ -279,6 +293,22 @@ public class NanoGridUI extends JFrame {
         toolBar.add(newPuzzleAction);
         toolBar.add(refreshAction);
         toolBar.addSeparator();
+        toolBar.add(new JLabel("Difficulty "));
+        toolBar.add(difficultyCombo);
+        toolBar.add(symmetricCheckBox);
+        toolBar.add(new JLabel("Seed "));
+        seedField.setToolTipText("Optional reproducible puzzle seed");
+        toolBar.add(seedField);
+        JButton applyButton = new JButton("Apply");
+        applyButton.setToolTipText("Generate a new puzzle with these options");
+        applyButton.addActionListener(new java.awt.event.ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                reset();
+            }
+        });
+        toolBar.add(applyButton);
+        toolBar.addSeparator();
         toolBar.add(createModeButton("Cycle", InteractionMode.CYCLE, true));
         toolBar.add(createModeButton("Fill", InteractionMode.FILL, false));
         toolBar.add(createModeButton("Mark", InteractionMode.MARK, false));
@@ -393,6 +423,7 @@ public class NanoGridUI extends JFrame {
         }
         try {
             controller.loadGame(loadFile);
+            updateGenerationControls(controller.getSettings());
             redraw();
             resetSessionStats();
             statusLabel.setText("Loaded game");
@@ -408,6 +439,7 @@ public class NanoGridUI extends JFrame {
         }
         try {
             controller.loadPuzzle(loadFile);
+            updateGenerationControls(controller.getSettings());
             redraw();
             resetSessionStats();
             statusLabel.setText("Loaded puzzle");
@@ -528,6 +560,29 @@ public class NanoGridUI extends JFrame {
         timerLabel.setText("00:00");
         startTimer();
         setMode(InteractionMode.CYCLE);
+    }
+
+    private boolean applyGenerationControls(NanoGridParameters settings) {
+        settings.setDifficulty((PuzzleDifficulty) difficultyCombo.getSelectedItem());
+        settings.setSymmetric(symmetricCheckBox.isSelected());
+        String seedText = seedField.getText().trim();
+        if (seedText.isEmpty()) {
+            settings.clearSeed();
+            return true;
+        }
+        try {
+            settings.setSeed(Long.parseLong(seedText));
+            return true;
+        } catch (NumberFormatException ex) {
+            showError("Seed must be a whole number.");
+            return false;
+        }
+    }
+
+    private void updateGenerationControls(NanoGridParameters settings) {
+        difficultyCombo.setSelectedItem(settings.getDifficulty());
+        symmetricCheckBox.setSelected(settings.isSymmetric());
+        seedField.setText(settings.isUseSeed() ? String.valueOf(settings.getSeed()) : "");
     }
 
     private void startTimer() {

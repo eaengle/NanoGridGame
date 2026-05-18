@@ -10,7 +10,7 @@ public class NanoGridBoard {
     private static final Logger LOG = Logger.getLogger(NanoGridBoard.class.getName());
 
     private char[][] board;
-    private final Random rnd = new Random();
+    private Random rnd = new Random();
     private NanoGridParameters settings;
 
     public static final char FillChar = '#';
@@ -41,23 +41,10 @@ public class NanoGridBoard {
     public void create(int cols, int rows) {
         settings.setColumns(cols);
         settings.setRows(rows);
+        rnd = settings.isUseSeed() ? new Random(settings.getSeed()) : new Random();
         board = new char[cols][rows];
-        int ccnt = 0;
-        int rcnt = 0;
-        int cst = rnd.nextInt(cols);
-        int rst = rnd.nextInt(rows);
-        while (ccnt < cols || rcnt < rows) {
-            if (rcnt < rows) {
-                rst = ++rst % rows;
-                fillRow(rst);
-                ++rcnt;
-            }
-            if (ccnt < cols) {
-                cst = ++cst % cols;
-                fillCol(cst);
-                ++ccnt;
-            }
-        }
+        fillBoard();
+        ensurePlayable();
         LOG.fine("Board created: " + cols + "x" + rows);
     }
 
@@ -119,50 +106,58 @@ public class NanoGridBoard {
         return lst.toArray(ary);
     }
 
-    private void fillCol(int c) {
-        int cnt = settings.getMaxColumnSquares() + 1;
-        fillArray(cnt, board[c]);
-    }
-
-    private void fillRow(int r) {
-        char[] ary = createRowArray(r);
-        int cnt = settings.getMaxRowSquares() + 1;
-        fillArray(cnt, ary);
-        fillRowArray(r, ary);
-    }
-
-    private void fillArray(int cnt, char[] ary) {
-        if (cnt < 1) {
-            cnt = 1;
-        }
-        if (cnt >= ary.length) {
-            cnt = ary.length - 1;
-        }
-        int pos = rnd.nextInt(ary.length);
-        boolean filled = false;
-        while (!filled) {
-            for (int i = 0; i < cnt; i++) {
-                int s = rnd.nextInt(100) + 1;
-                pos = ++pos % ary.length;
-                if (s == 100 || s > settings.getRowBreakChance()) {
-                    filled = true;
-                    ary[pos] = FillChar;
+    private void fillBoard() {
+        int fillPercent = settings.getDifficulty().getFillPercent();
+        int continuationPercent = settings.getDifficulty().getContinuationPercent();
+        for (int c = 0; c < settings.getColumns(); c++) {
+            for (int r = 0; r < settings.getRows(); r++) {
+                if (settings.isSymmetric() && isMirroredCellAlreadyHandled(c, r)) {
+                    continue;
+                }
+                boolean nearFilledCell = hasFilledNeighbor(c, r);
+                int chance = nearFilledCell ? continuationPercent : fillPercent;
+                if (rnd.nextInt(100) < chance) {
+                    setGeneratedCell(c, r, FillChar);
                 }
             }
         }
     }
 
-    private char[] createRowArray(int r) {
-        char[] ary = new char[board.length];
-        for (int c = 0; c < board.length; c++) {
-            ary[c] = board[c][r];
-        }
-        return ary;
+    private boolean isMirroredCellAlreadyHandled(int col, int row) {
+        int mirrorCol = settings.getColumns() - col - 1;
+        int mirrorRow = settings.getRows() - row - 1;
+        return col > mirrorCol || (col == mirrorCol && row > mirrorRow);
     }
 
-    private void fillRowArray(int r, char[] ary) {
-        for (int c = 0; c < board.length; c++) {
-            board[c][r] = ary[c];
+    private void setGeneratedCell(int col, int row, char value) {
+        board[col][row] = value;
+        if (settings.isSymmetric()) {
+            int mirrorCol = settings.getColumns() - col - 1;
+            int mirrorRow = settings.getRows() - row - 1;
+            board[mirrorCol][mirrorRow] = value;
+        }
+    }
+
+    private boolean hasFilledNeighbor(int col, int row) {
+        return isFilled(col - 1, row) || isFilled(col, row - 1);
+    }
+
+    private boolean isFilled(int col, int row) {
+        return col >= 0 && row >= 0 &&
+                col < settings.getColumns() && row < settings.getRows() &&
+                board[col][row] == FillChar;
+    }
+
+    private void ensurePlayable() {
+        for (int c = 0; c < settings.getColumns(); c++) {
+            if (getColumnCounts(c).length == 0) {
+                setGeneratedCell(c, rnd.nextInt(settings.getRows()), FillChar);
+            }
+        }
+        for (int r = 0; r < settings.getRows(); r++) {
+            if (getRowCounts(r).length == 0) {
+                setGeneratedCell(rnd.nextInt(settings.getColumns()), r, FillChar);
+            }
         }
     }
 
