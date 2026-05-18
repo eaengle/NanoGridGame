@@ -2,6 +2,9 @@ package nanogridgame;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import java.io.File;
+import java.nio.file.Path;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class NanoGridGameTest {
@@ -50,9 +53,20 @@ public class NanoGridGameTest {
     void setCellAndMarkAreSynchronisedInPlayRows() {
         game.setCell(2, 3);
         assertEquals(NanoGridBoard.FillChar, game.getPlayColumns()[2][3]);
-        // getPlayRows is package-private; use reflection-free approach via getPlayColumns
+        assertEquals(NanoGridBoard.FillChar, game.getPlayRows()[3][2]);
+
         game.setMark(0, 4);
         assertEquals(NanoGridBoard.MarkChar, game.getPlayColumns()[0][4]);
+        assertEquals(NanoGridBoard.MarkChar, game.getPlayRows()[4][0]);
+    }
+
+    @Test
+    void clearCellIsSynchronisedInPlayRows() {
+        game.setCell(2, 3);
+        game.clearCell(2, 3);
+
+        assertEquals(0, game.getPlayColumns()[2][3]);
+        assertEquals(0, game.getPlayRows()[3][2]);
     }
 
     @Test
@@ -97,5 +111,61 @@ public class NanoGridGameTest {
         game.setCell(2, 2);
         game.create();
         assertEquals(0, game.getPlayColumns()[2][2]);
+    }
+
+    @Test
+    void saveGameRoundTripPreservesBoardSettingsAndProgress(@TempDir Path tempDir) throws Exception {
+        game.setCell(0, 0);
+        game.setMark(1, 1);
+        File saveFile = tempDir.resolve("game.xml").toFile();
+
+        game.saveGame(saveFile);
+
+        NanoGridGame loaded = new NanoGridGame(new NanoGridParameters());
+        loaded.loadBoard(saveFile);
+
+        assertEquals(5, loaded.getSettings().getColumns());
+        assertEquals(5, loaded.getSettings().getRows());
+        assertTrue(game.getBoard().checkWin(loaded.getBoard()));
+        assertEquals(NanoGridBoard.FillChar, loaded.getPlayColumns()[0][0]);
+        assertEquals(NanoGridBoard.MarkChar, loaded.getPlayColumns()[1][1]);
+        assertEquals(NanoGridBoard.FillChar, loaded.getPlayRows()[0][0]);
+        assertEquals(NanoGridBoard.MarkChar, loaded.getPlayRows()[1][1]);
+    }
+
+    @Test
+    void savePuzzleRoundTripPreservesBoardButOmitsProgress(@TempDir Path tempDir) throws Exception {
+        game.setCell(0, 0);
+        game.setMark(1, 1);
+        File saveFile = tempDir.resolve("puzzle.xml").toFile();
+
+        game.savePuzzle(saveFile);
+
+        assertEquals(NanoGridBoard.FillChar, game.getPlayColumns()[0][0]);
+        assertEquals(NanoGridBoard.MarkChar, game.getPlayColumns()[1][1]);
+
+        NanoGridGame loaded = new NanoGridGame(new NanoGridParameters());
+        loaded.loadBoard(saveFile);
+
+        assertTrue(game.getBoard().checkWin(loaded.getBoard()));
+        assertEquals(0, loaded.getPlayColumns()[0][0]);
+        assertEquals(0, loaded.getPlayColumns()[1][1]);
+        assertEquals(0, loaded.getPlayRows()[0][0]);
+        assertEquals(0, loaded.getPlayRows()[1][1]);
+    }
+
+    @Test
+    void resetBoardLoadsPuzzleAndClearsSavedProgress(@TempDir Path tempDir) throws Exception {
+        game.setCell(0, 0);
+        game.setMark(1, 1);
+        File saveFile = tempDir.resolve("game-with-progress.xml").toFile();
+        game.saveGame(saveFile);
+
+        NanoGridGame loadedAsPuzzle = new NanoGridGame(new NanoGridParameters());
+        loadedAsPuzzle.resetBoard(saveFile);
+
+        assertTrue(game.getBoard().checkWin(loadedAsPuzzle.getBoard()));
+        assertEquals(0, loadedAsPuzzle.getPlayColumns()[0][0]);
+        assertEquals(0, loadedAsPuzzle.getPlayColumns()[1][1]);
     }
 }

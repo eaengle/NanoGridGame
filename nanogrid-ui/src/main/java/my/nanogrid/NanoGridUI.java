@@ -236,7 +236,7 @@ public class NanoGridUI extends javax.swing.JFrame {
     }
 
     private void menuSavePuzzleActionPerformed(java.awt.event.ActionEvent evt) {
-        saveGame();
+        savePuzzle();
     }
 
     private void menuRefreshActionPerformed(java.awt.event.ActionEvent evt) {
@@ -729,6 +729,14 @@ public class NanoGridUI extends javax.swing.JFrame {
     }
 
     private void saveGame() {
+        saveBoardFile(true);
+    }
+
+    private void savePuzzle() {
+        saveBoardFile(false);
+    }
+
+    private void saveBoardFile(boolean includeProgress) {
         JFileChooser chooser = new JFileChooser();
         FileNameExtensionFilter filter = new FileNameExtensionFilter("Nanogrid Save Files", "xml");
         chooser.setFileFilter(filter);
@@ -740,7 +748,11 @@ public class NanoGridUI extends javax.swing.JFrame {
                 file = new File(chooser.getCurrentDirectory(), file.getName() + ".xml");
             }
             try {
-                controller.saveGame(file);
+                if (includeProgress) {
+                    controller.saveGame(file);
+                } else {
+                    controller.savePuzzle(file);
+                }
             } catch (IOException ex) {
                 showError("Failed to save: " + ex.getMessage());
             }

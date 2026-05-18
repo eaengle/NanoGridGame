@@ -121,6 +121,19 @@ public class NanoGridGame {
         file.serialize(output);
     }
 
+    public void savePuzzle(File output) throws IOException {
+        char[][] currentPlayColumns = playBoardColumns;
+        char[][] currentPlayRows = playBoardRows;
+        playBoardColumns = new char[settings.getColumns()][settings.getRows()];
+        playBoardRows = new char[settings.getRows()][settings.getColumns()];
+        try {
+            saveGame(output);
+        } finally {
+            playBoardColumns = currentPlayColumns;
+            playBoardRows = currentPlayRows;
+        }
+    }
+
     void setBoard(char[][] src) {
         board = new NanoGridBoard(settings);
         board.copy(src);
@@ -136,7 +149,7 @@ public class NanoGridGame {
     }
 
     void setPlayColumns(char[][] cols) {
-        playBoardColumns = cols;
+        playBoardColumns = normalizePlayBoard(cols);
     }
 
     char[][] getPlayRows() {
@@ -144,7 +157,18 @@ public class NanoGridGame {
     }
 
     public void setPlayRows(char[][] rows) {
-        playBoardRows = rows;
+        playBoardRows = normalizePlayBoard(rows);
+    }
+
+    private char[][] normalizePlayBoard(char[][] board) {
+        char[][] normalized = new char[board.length][board[0].length];
+        for (int c = 0; c < board.length; c++) {
+            for (int r = 0; r < board[c].length; r++) {
+                char ch = board[c][r];
+                normalized[c][r] = ch == '_' ? 0 : ch;
+            }
+        }
+        return normalized;
     }
 
     public int getIncorrectMoves() {

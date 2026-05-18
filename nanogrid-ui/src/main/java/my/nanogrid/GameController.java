@@ -73,4 +73,8 @@ public class GameController {
     public void saveGame(File file) throws IOException {
         game.saveGame(file);
     }
+
+    public void savePuzzle(File file) throws IOException {
+        game.savePuzzle(file);
+    }
 }
