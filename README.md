@@ -46,6 +46,7 @@ java -jar nanogrid-app/target/nanogrid-app-1.0-SNAPSHOT.jar
 - `Load Puzzle...` loads the puzzle and starts with empty player progress.
 - New saves use versioned JSON when the filename ends in `.json`.
 - Existing XML saves still load and can still be written by using a `.xml` filename.
+- The Swing UI renders the puzzle board through a custom painted board view.
 
 ## Core model direction
 

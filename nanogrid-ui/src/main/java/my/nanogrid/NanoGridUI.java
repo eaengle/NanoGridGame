@@ -1,6 +1,8 @@
 package my.nanogrid;
 
 import java.awt.Color;
+import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
@@ -229,7 +231,6 @@ public class NanoGridUI extends javax.swing.JFrame {
         try {
             controller.loadGame(loadFile);
             redraw();
-            placeMarks();
         } catch (IOException ex) {
             showError("Failed to load game: " + ex.getMessage());
         }
@@ -353,6 +354,7 @@ public class NanoGridUI extends javax.swing.JFrame {
 
     private InstructionDialog instructions;
     private GameController controller;
+    private NanoGridBoardView boardView;
 
     private void initCustom() {
         NanoGridParameters p = new NanoGridParameters();
@@ -370,30 +372,30 @@ public class NanoGridUI extends javax.swing.JFrame {
 
     public void reset() {
         createGame();
-        setPanes();
-        redrawGrid();
-        displayGame(false);
+        redraw();
     }
 
     public void reset(NanoGridParameters newSettings) {
         controller.setSettings(newSettings);
         createGame();
-        setPanes();
-        redrawGrid();
-        displayGame(false);
+        redraw();
     }
 
     void redraw() {
-        setPanes();
-        redrawGrid();
-        displayGame(false);
+        if (boardView == null) {
+            installBoardView();
+        }
+        boardView.refreshBoard();
+        pack();
     }
 
     public void setup() {
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         createGame();
-        setPanes();
-        displayGame(false);
+        installBoardView();
+        setResizable(true);
+        setMinimumSize(new Dimension(560, 460));
+        pack();
     }
 
     public NanoGridParameters getSettings() {
@@ -402,6 +404,20 @@ public class NanoGridUI extends javax.swing.JFrame {
 
     public GameController getController() {
         return controller;
+    }
+
+    private void installBoardView() {
+        boardView = new NanoGridBoardView(controller, new Runnable() {
+            @Override
+            public void run() {
+                winGame();
+            }
+        });
+        mainPanel.removeAll();
+        mainPanel.setLayout(new BorderLayout());
+        mainPanel.add(boardView, BorderLayout.CENTER);
+        mainPanel.revalidate();
+        mainPanel.repaint();
     }
 
     private JTextPane[][] panes;
@@ -566,39 +582,14 @@ public class NanoGridUI extends javax.swing.JFrame {
     }
 
     public void revealGame() {
-        NanoGridBoard board = controller.getBoard();
-        for (int r = 0; r < getSettings().getRows(); r++) {
-            for (int c = 0; c < getSettings().getColumns(); c++) {
-                JTextPane pane = panes[c][r];
-                char ch = board.getCell(c, r);
-                if (pane.getText().equals(String.valueOf(NanoGridBoard.FillChar))) {
-                    pane.setForeground(Color.green);
-                    setColor(pane, Color.green);
-                } else if (ch == NanoGridBoard.FillChar) {
-                    setColor(pane, Color.black);
-                    pane.setForeground(Color.black);
-                }
-                pane.setText(String.valueOf(ch));
-            }
+        if (boardView != null) {
+            boardView.setShowSolution(true);
         }
     }
 
     public void displayGame(boolean show) {
-        NanoGridBoard board = controller.getBoard();
-        displayColumnCounts();
-        displayRowCounts();
-        for (int r = 0; r < getSettings().getRows(); r++) {
-            for (int c = 0; c < getSettings().getColumns(); c++) {
-                JTextPane pane = panes[c][r];
-                if (show && pane.getText().equals(String.valueOf(NanoGridBoard.FillChar))) {
-                    pane.setForeground(Color.green);
-                    setColor(pane, Color.green);
-                } else if (show && board.getCell(c, r) == NanoGridBoard.FillChar) {
-                    setCell(pane);
-                } else if (show) {
-                    setClear(pane);
-                }
-            }
+        if (boardView != null) {
+            boardView.setShowSolution(show);
         }
     }
 
@@ -783,18 +774,9 @@ public class NanoGridUI extends javax.swing.JFrame {
     }
 
     private void placeMarks() {
-        char[][] board = controller.getPlayColumns();
-        for (int c = 0; c < board.length; c++) {
-            for (int r = 0; r < board[0].length; r++) {
-                JTextPane pane = panes[c][r];
-                if (board[c][r] == NanoGridBoard.FillChar) {
-                    setCell(pane);
-                } else if (board[c][r] == NanoGridBoard.MarkChar) {
-                    setMark(pane);
-                } else {
-                    setClear(pane);
-                }
-            }
+        if (boardView != null) {
+            boardView.setShowSolution(false);
+            boardView.repaint();
         }
     }
 
@@ -932,10 +914,13 @@ public class NanoGridUI extends javax.swing.JFrame {
     }
 
     private void refreshGame() {
-        for (int c = 0; c < panes.length; c++) {
-            for (int r = 0; r < panes[0].length; r++) {
-                setClear(panes[c][r]);
+        for (int c = 0; c < getSettings().getColumns(); c++) {
+            for (int r = 0; r < getSettings().getRows(); r++) {
+                controller.clearCell(c, r);
             }
+        }
+        if (boardView != null) {
+            boardView.refreshBoard();
         }
     }
 }
