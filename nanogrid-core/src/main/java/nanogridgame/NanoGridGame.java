@@ -2,6 +2,8 @@ package nanogridgame;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import static nanogridgame.NanoGridBoard.FillChar;
 
@@ -103,8 +105,13 @@ public class NanoGridGame {
     }
 
     public void loadBoard(File loadFile) throws IOException {
-        NanoGridFile file = new NanoGridFile(this);
-        file.deserialize(loadFile);
+        if (isJsonFile(loadFile)) {
+            NanoGridJsonFile file = new NanoGridJsonFile(this);
+            file.deserialize(loadFile);
+        } else {
+            NanoGridFile file = new NanoGridFile(this);
+            file.deserialize(loadFile);
+        }
     }
 
     public void resetBoard(File loadFile) throws IOException {
@@ -113,8 +120,13 @@ public class NanoGridGame {
     }
 
     public void saveGame(File output) throws IOException {
-        NanoGridFile file = new NanoGridFile(this);
-        file.serialize(output);
+        if (usesJsonExtension(output)) {
+            NanoGridJsonFile file = new NanoGridJsonFile(this);
+            file.serialize(output);
+        } else {
+            NanoGridFile file = new NanoGridFile(this);
+            file.serialize(output);
+        }
     }
 
     public void savePuzzle(File output) throws IOException {
@@ -167,5 +179,17 @@ public class NanoGridGame {
 
     public int getIncorrectMoves() {
         return getSession().getIncorrectMoves();
+    }
+
+    private boolean usesJsonExtension(File file) {
+        return file.getName().toLowerCase().endsWith(".json");
+    }
+
+    private boolean isJsonFile(File file) throws IOException {
+        if (usesJsonExtension(file)) {
+            return true;
+        }
+        String content = new String(Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8).trim();
+        return content.startsWith("{");
     }
 }

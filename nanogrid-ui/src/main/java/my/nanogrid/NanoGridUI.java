@@ -738,14 +738,14 @@ public class NanoGridUI extends javax.swing.JFrame {
 
     private void saveBoardFile(boolean includeProgress) {
         JFileChooser chooser = new JFileChooser();
-        FileNameExtensionFilter filter = new FileNameExtensionFilter("Nanogrid Save Files", "xml");
+        FileNameExtensionFilter filter = new FileNameExtensionFilter("Nanogrid Save Files", "json", "xml");
         chooser.setFileFilter(filter);
         int returnVal = chooser.showSaveDialog(this);
         if (returnVal == JFileChooser.APPROVE_OPTION) {
             File file = chooser.getSelectedFile();
-            String ext = getFileExtension(file);
-            if (!ext.equals("xml")) {
-                file = new File(chooser.getCurrentDirectory(), file.getName() + ".xml");
+            String ext = getFileExtension(file).toLowerCase();
+            if (!ext.equals("json") && !ext.equals("xml")) {
+                file = new File(chooser.getCurrentDirectory(), file.getName() + ".json");
             }
             try {
                 if (includeProgress) {
@@ -775,7 +775,7 @@ public class NanoGridUI extends javax.swing.JFrame {
 
     private File getBoardFile() {
         JFileChooser chooser = new JFileChooser();
-        FileNameExtensionFilter filter = new FileNameExtensionFilter("Nanogrid Save Files", "xml");
+        FileNameExtensionFilter filter = new FileNameExtensionFilter("Nanogrid Save Files", "json", "xml");
         chooser.setFileFilter(filter);
         int returnVal = chooser.showOpenDialog(this);
         if (returnVal == JFileChooser.APPROVE_OPTION) return chooser.getSelectedFile();

@@ -4,6 +4,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import java.io.File;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -150,6 +152,45 @@ public class NanoGridGameTest {
     }
 
     @Test
+    void saveJsonGameRoundTripPreservesBoardSettingsAndProgress(@TempDir Path tempDir) throws Exception {
+        game.setCell(0, 0);
+        game.setMark(1, 1);
+        File saveFile = tempDir.resolve("game.json").toFile();
+
+        game.saveGame(saveFile);
+
+        String json = new String(Files.readAllBytes(saveFile.toPath()), StandardCharsets.UTF_8);
+        assertTrue(json.contains("\"format\": \"NanoGridGame\""));
+        assertTrue(json.contains("\"version\": 3"));
+
+        NanoGridGame loaded = new NanoGridGame(new NanoGridParameters());
+        loaded.loadBoard(saveFile);
+
+        assertEquals(5, loaded.getSettings().getColumns());
+        assertEquals(5, loaded.getSettings().getRows());
+        assertTrue(game.getBoard().checkWin(loaded.getBoard()));
+        assertEquals(NanoGridBoard.FillChar, loaded.getPlayColumns()[0][0]);
+        assertEquals(NanoGridBoard.MarkChar, loaded.getPlayColumns()[1][1]);
+        assertEquals(NanoGridBoard.FillChar, loaded.getPlayRows()[0][0]);
+        assertEquals(NanoGridBoard.MarkChar, loaded.getPlayRows()[1][1]);
+    }
+
+    @Test
+    void loadBoardDetectsJsonContentWithoutJsonExtension(@TempDir Path tempDir) throws Exception {
+        game.setCell(0, 0);
+        File jsonFile = tempDir.resolve("game.json").toFile();
+        File saveFile = tempDir.resolve("game.ngrid").toFile();
+        game.saveGame(jsonFile);
+        Files.copy(jsonFile.toPath(), saveFile.toPath());
+
+        NanoGridGame loaded = new NanoGridGame(new NanoGridParameters());
+        loaded.loadBoard(saveFile);
+
+        assertTrue(game.getBoard().checkWin(loaded.getBoard()));
+        assertEquals(NanoGridBoard.FillChar, loaded.getPlayColumns()[0][0]);
+    }
+
+    @Test
     void savePuzzleRoundTripPreservesBoardButOmitsProgress(@TempDir Path tempDir) throws Exception {
         game.setCell(0, 0);
         game.setMark(1, 1);
@@ -168,6 +209,25 @@ public class NanoGridGameTest {
         assertEquals(0, loaded.getPlayColumns()[1][1]);
         assertEquals(0, loaded.getPlayRows()[0][0]);
         assertEquals(0, loaded.getPlayRows()[1][1]);
+    }
+
+    @Test
+    void saveJsonPuzzleRoundTripPreservesBoardButOmitsProgress(@TempDir Path tempDir) throws Exception {
+        game.setCell(0, 0);
+        game.setMark(1, 1);
+        File saveFile = tempDir.resolve("puzzle.json").toFile();
+
+        game.savePuzzle(saveFile);
+
+        assertEquals(NanoGridBoard.FillChar, game.getPlayColumns()[0][0]);
+        assertEquals(NanoGridBoard.MarkChar, game.getPlayColumns()[1][1]);
+
+        NanoGridGame loaded = new NanoGridGame(new NanoGridParameters());
+        loaded.loadBoard(saveFile);
+
+        assertTrue(game.getBoard().checkWin(loaded.getBoard()));
+        assertEquals(0, loaded.getPlayColumns()[0][0]);
+        assertEquals(0, loaded.getPlayColumns()[1][1]);
     }
 
     @Test

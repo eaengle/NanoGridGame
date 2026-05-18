@@ -44,6 +44,8 @@ java -jar nanogrid-app/target/nanogrid-app-1.0-SNAPSHOT.jar
 - `Save Puzzle...` writes the puzzle with empty player progress.
 - `Load Game...` restores both the puzzle and player progress.
 - `Load Puzzle...` loads the puzzle and starts with empty player progress.
+- New saves use versioned JSON when the filename ends in `.json`.
+- Existing XML saves still load and can still be written by using a `.xml` filename.
 
 ## Core model direction
 
