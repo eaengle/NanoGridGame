@@ -1,19 +1,13 @@
 package my.nanogrid;
 
-import javax.swing.InputVerifier;
-import javax.swing.JComponent;
-import javax.swing.JSpinner;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.event.ChangeListener;
 import nanogridgame.NanoGridParameters;
 
 public class GridSizeDialog extends javax.swing.JDialog {
 
-    SpinnerNumberModel ColumnNumberModel;
-
     public GridSizeDialog(java.awt.Frame parent, boolean modal) {
         super(parent, modal);
-        ColumnNumberModel = new SpinnerNumberModel(5, 5, 50, 1);
         initComponents();
         initCustom();
     }
@@ -154,27 +148,27 @@ public class GridSizeDialog extends javax.swing.JDialog {
         this.setVisible(false);
     }
 
-    NanoGridUI UI;
-    NanoGridParameters Settings;
+    private NanoGridUI ui;
+    private NanoGridParameters localSettings;
 
     public void setUI(NanoGridUI ui) {
-        UI = ui;
-        Settings = new NanoGridParameters(UI.Settings);
-        colSpinner.setValue(Settings.Columns);
-        rowSpinner.setValue(Settings.Rows);
-        maxRowsSpinner.setValue(Settings.MaxRowSquares);
-        maxColsSpinner.setValue(Settings.MaxColumnSquares);
-        rowBreakSpinner.setValue(Settings.RowBreakChance);
+        this.ui = ui;
+        NanoGridParameters current = ui.getController().getSettings();
+        localSettings = new NanoGridParameters(current);
+        colSpinner.setValue(localSettings.getColumns());
+        rowSpinner.setValue(localSettings.getRows());
+        maxRowsSpinner.setValue(localSettings.getMaxRowSquares());
+        maxColsSpinner.setValue(localSettings.getMaxColumnSquares());
+        rowBreakSpinner.setValue(localSettings.getRowBreakChance());
     }
 
     private void okButtonActionPerformed(java.awt.event.ActionEvent evt) {
-        Settings.Columns = Integer.parseInt(colSpinner.getValue().toString());
-        Settings.Rows = Integer.parseInt(rowSpinner.getValue().toString());
-        Settings.MaxColumnSquares = Integer.parseInt(maxColsSpinner.getValue().toString());
-        Settings.MaxRowSquares = Integer.parseInt(maxRowsSpinner.getValue().toString());
-        Settings.RowBreakChance = Integer.parseInt(rowBreakSpinner.getValue().toString());
-        UI.Settings = Settings;
-        UI.reset();
+        localSettings.setColumns(Integer.parseInt(colSpinner.getValue().toString()));
+        localSettings.setRows(Integer.parseInt(rowSpinner.getValue().toString()));
+        localSettings.setMaxColumnSquares(Integer.parseInt(maxColsSpinner.getValue().toString()));
+        localSettings.setMaxRowSquares(Integer.parseInt(maxRowsSpinner.getValue().toString()));
+        localSettings.setRowBreakChance(Integer.parseInt(rowBreakSpinner.getValue().toString()));
+        ui.reset(localSettings);
         this.setVisible(false);
     }
 

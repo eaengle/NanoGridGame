@@ -1,21 +1,18 @@
 package my.nanogrid;
 
-import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.swing.JEditorPane;
 
 public class InstructionDialog extends javax.swing.JDialog {
+
+    private static final Logger LOG = Logger.getLogger(InstructionDialog.class.getName());
 
     public InstructionDialog(java.awt.Frame parent, boolean modal) {
         super(parent, modal);
         initComponents();
-        try {
-            initCustom();
-        } catch (IOException ex) {
-            Logger.getLogger(InstructionDialog.class.getName()).log(Level.SEVERE, null, ex);
-        }
+        initCustom();
     }
 
     @SuppressWarnings("unchecked")
@@ -48,9 +45,34 @@ public class InstructionDialog extends javax.swing.JDialog {
     private javax.swing.JScrollPane jScrollPane1;
     // End of variables declaration//GEN-END:variables
 
-    private void initCustom() throws IOException {
-        File file = new File("instructions.html");
-        instructionPane.setPage(file.toURI().toURL());
+    private void initCustom() {
+        URL url = InstructionDialog.class.getResource("/instructions.html");
+        if (url != null) {
+            try {
+                instructionPane.setPage(url);
+            } catch (IOException ex) {
+                LOG.log(Level.WARNING, "Could not load instructions page", ex);
+                showFallback();
+            }
+        } else {
+            showFallback();
+        }
         instructionPane.setEditable(false);
+    }
+
+    private void showFallback() {
+        instructionPane.setContentType("text/html");
+        instructionPane.setText(
+            "<html><body>" +
+            "<h2>How to Play Nano Grid</h2>" +
+            "<p>Fill in squares according to the number clues on each row and column.</p>" +
+            "<ul>" +
+            "<li><b>Left-click</b> a cell to fill it.</li>" +
+            "<li><b>Left-click</b> a filled cell to mark it (X), then again to clear.</li>" +
+            "<li><b>Right-click</b> a cell to start a counting guide along a row or column.</li>" +
+            "</ul>" +
+            "<p>Use the <b>Hint</b> menu to check your progress, peek at the solution briefly, or reveal it.</p>" +
+            "</body></html>"
+        );
     }
 }

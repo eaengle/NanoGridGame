@@ -1,21 +1,20 @@
 package my.nanogrid;
 
-import javax.swing.JSpinner;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 public class MaxValueChangeListener implements ChangeListener {
 
-    GridSizeDialog GUI;
+    private final GridSizeDialog gui;
 
     MaxValueChangeListener(GridSizeDialog gui) {
-        GUI = gui;
+        this.gui = gui;
     }
 
     @Override
     public void stateChanged(ChangeEvent ce) {
-        SpinnerNumberModel Source = (SpinnerNumberModel) ce.getSource();
-        GUI.validateChange(Source);
+        SpinnerNumberModel source = (SpinnerNumberModel) ce.getSource();
+        gui.validateChange(source);
     }
 }

@@ -3,46 +3,49 @@ package nanogridgame;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Random;
+import java.util.logging.Logger;
 
 public class NanoGridBoard {
 
-    char[][] Board;
-    Random Rnd = new Random();
+    private static final Logger LOG = Logger.getLogger(NanoGridBoard.class.getName());
+
+    private char[][] board;
+    private final Random rnd = new Random();
+    private NanoGridParameters settings;
+
     public static final char FillChar = '#';
     public static final char MarkChar = 'X';
     public static final char EmptyChar = ' ';
 
-    NanoGridParameters Settings;
-
     public NanoGridBoard(NanoGridParameters p) {
-        Settings = p;
-        create(p.Columns, p.Rows);
+        settings = p;
+        create(p.getColumns(), p.getRows());
     }
 
     public void create(int sz) {
         create(sz, sz);
     }
 
-    public void copy(char[][] board) {
-        Settings.Columns = board.length;
-        Settings.Rows = board[0].length;
-        Board = new char[Settings.Columns][Settings.Rows];
-        for (int c = 0; c < Settings.Columns; c++) {
-            for (int r = 0; r < Settings.Rows; r++) {
-                char ch = board[c][r];
-                Board[c][r] = ch == '_' ? EmptyChar : ch;
+    public void copy(char[][] src) {
+        settings.setColumns(src.length);
+        settings.setRows(src[0].length);
+        board = new char[settings.getColumns()][settings.getRows()];
+        for (int c = 0; c < settings.getColumns(); c++) {
+            for (int r = 0; r < settings.getRows(); r++) {
+                char ch = src[c][r];
+                board[c][r] = ch == '_' ? EmptyChar : ch;
             }
         }
     }
 
     public void create(int cols, int rows) {
-        Settings.Columns = cols;
-        Settings.Rows = rows;
-        Board = new char[cols][rows];
+        settings.setColumns(cols);
+        settings.setRows(rows);
+        board = new char[cols][rows];
         int ccnt = 0;
         int rcnt = 0;
-        int cst = Rnd.nextInt(cols);
-        int rst = Rnd.nextInt(rows);
+        int cst = rnd.nextInt(cols);
+        int rst = rnd.nextInt(rows);
         while (ccnt < cols || rcnt < rows) {
             if (rcnt < rows) {
                 rst = ++rst % rows;
@@ -55,17 +58,17 @@ public class NanoGridBoard {
                 ++ccnt;
             }
         }
-        createUniqueSolution();
+        LOG.fine("Board created: " + cols + "x" + rows);
     }
 
     public char getCell(int col, int row) {
-        return Board[col][row];
+        return board[col][row];
     }
 
     public Integer[][] getColumnCounts() {
         ArrayList<Integer[]> lst = new ArrayList<>();
-        for (int c = 0; c < Board.length; c++) {
-            lst.add(NanoGridBoard.this.getColumnCounts(c));
+        for (int c = 0; c < board.length; c++) {
+            lst.add(getColumnCounts(c));
         }
         Integer[][] ary = new Integer[lst.size()][];
         return lst.toArray(ary);
@@ -74,8 +77,8 @@ public class NanoGridBoard {
     public Integer[] getColumnCounts(int col) {
         ArrayList<Integer> lst = new ArrayList<>();
         int cnt = 0;
-        for (int r = 0; r < Board[0].length; r++) {
-            if (Board[col][r] == FillChar) {
+        for (int r = 0; r < board[0].length; r++) {
+            if (board[col][r] == FillChar) {
                 ++cnt;
             } else if (cnt > 0) {
                 lst.add(cnt);
@@ -91,7 +94,7 @@ public class NanoGridBoard {
 
     public Integer[][] getRowCounts() {
         ArrayList<Integer[]> lst = new ArrayList<>();
-        for (int r = 0; r < Board[0].length; r++) {
+        for (int r = 0; r < board[0].length; r++) {
             lst.add(getRowCounts(r));
         }
         Integer[][] ary = new Integer[lst.size()][];
@@ -101,8 +104,8 @@ public class NanoGridBoard {
     public Integer[] getRowCounts(int row) {
         ArrayList<Integer> lst = new ArrayList<>();
         int cnt = 0;
-        for (int c = 0; c < Board.length; c++) {
-            if (Board[c][row] == FillChar) {
+        for (int c = 0; c < board.length; c++) {
+            if (board[c][row] == FillChar) {
                 ++cnt;
             } else if (cnt > 0) {
                 lst.add(cnt);
@@ -117,13 +120,13 @@ public class NanoGridBoard {
     }
 
     private void fillCol(int c) {
-        int cnt = Settings.MaxColumnSquares + 1;
-        fillArray(cnt, Board[c]);
+        int cnt = settings.getMaxColumnSquares() + 1;
+        fillArray(cnt, board[c]);
     }
 
     private void fillRow(int r) {
         char[] ary = createRowArray(r);
-        int cnt = Settings.MaxRowSquares + 1;
+        int cnt = settings.getMaxRowSquares() + 1;
         fillArray(cnt, ary);
         fillRowArray(r, ary);
     }
@@ -135,13 +138,13 @@ public class NanoGridBoard {
         if (cnt >= ary.length) {
             cnt = ary.length - 1;
         }
-        int pos = Rnd.nextInt(ary.length);
+        int pos = rnd.nextInt(ary.length);
         boolean filled = false;
         while (!filled) {
             for (int i = 0; i < cnt; i++) {
-                int s = Rnd.nextInt(100) + 1;
+                int s = rnd.nextInt(100) + 1;
                 pos = ++pos % ary.length;
-                if (s == 100 || s > Settings.RowBreakChance) {
+                if (s == 100 || s > settings.getRowBreakChance()) {
                     filled = true;
                     ary[pos] = FillChar;
                 }
@@ -150,29 +153,29 @@ public class NanoGridBoard {
     }
 
     private char[] createRowArray(int r) {
-        char[] ary = new char[Board.length];
-        for (int c = 0; c < Board.length; c++) {
-            ary[c] = Board[c][r];
+        char[] ary = new char[board.length];
+        for (int c = 0; c < board.length; c++) {
+            ary[c] = board[c][r];
         }
         return ary;
     }
 
     private void fillRowArray(int r, char[] ary) {
-        for (int c = 0; c < Board.length; c++) {
-            Board[c][r] = ary[c];
+        for (int c = 0; c < board.length; c++) {
+            board[c][r] = ary[c];
         }
     }
 
     public int getColumnSize() {
-        return Board.length;
+        return board.length;
     }
 
     public int getRowSize() {
-        return Board[0].length;
+        return board[0].length;
     }
 
-    char[][] getColumns() {
-        return Board;
+    public char[][] getColumns() {
+        return board;
     }
 
     public int getMaxColumnCounts() {
@@ -185,9 +188,9 @@ public class NanoGridBoard {
 
     private int getMaxLength(Integer[][] cnts) {
         int max = 0;
-        for (int i = 0; i < cnts.length; i++) {
-            if (cnts[i].length > max) {
-                max = cnts[i].length;
+        for (Integer[] cnt : cnts) {
+            if (cnt.length > max) {
+                max = cnt.length;
             }
         }
         return max;
@@ -195,9 +198,9 @@ public class NanoGridBoard {
 
     public void printBoard(PrintStream out) {
         printColumnHeaders(out);
-        for (int r = 0; r < Board[0].length; r++) {
+        for (int r = 0; r < board[0].length; r++) {
             printRowHeader(out, r);
-            for (int c = 0; c < Board.length; c++) {
+            for (int c = 0; c < board.length; c++) {
                 out.printf("%c ", getCell(c, r));
             }
             out.println();
@@ -211,8 +214,7 @@ public class NanoGridBoard {
         int rmax = getMaxLength(rcnts);
         for (int r = 0; r < cmax; r++) {
             printPadding(out, rmax * 2);
-            for (int c = 0; c < ccnts.length; c++) {
-                Integer[] col = ccnts[c];
+            for (Integer[] col : ccnts) {
                 int idx = col.length - cmax + r;
                 if (idx >= 0) {
                     out.printf("%s ", col[idx]);
@@ -242,10 +244,6 @@ public class NanoGridBoard {
                 out.print("  ");
             }
         }
-    }
-
-    private void createUniqueSolution() {
-        GridSolutions solutions = new GridSolutions(Settings);
     }
 
     public boolean checkWin(NanoGridBoard brd) {

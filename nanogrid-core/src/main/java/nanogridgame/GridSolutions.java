@@ -1,69 +1,72 @@
 package nanogridgame;
 
-import java.util.ArrayList;
+import java.util.logging.Logger;
 
 public class GridSolutions {
-    GridSolution[] Rows;
-    Integer[][] RowCounts;
-    char[][] Board;
-    NanoGridBoard ControlBoard;
-    NanoGridParameters Settings;
-    int DuplicateCount;
+
+    private static final Logger LOG = Logger.getLogger(GridSolutions.class.getName());
+
+    private GridSolution[] rows;
+    private Integer[][] rowCounts;
+    private char[][] board;
+    private NanoGridBoard controlBoard;
+    private final NanoGridParameters settings;
+    private int duplicateCount;
+    private long counter;
 
     public GridSolutions(NanoGridParameters p) {
-        Settings = p;
+        settings = p;
     }
 
     private GridSolution[] createRowSolutions() {
-        GridSolution[] sols = new GridSolution[Settings.Rows];
+        GridSolution[] sols = new GridSolution[settings.getRows()];
         long total = 1;
-        for (int r = 0; r < Settings.Rows; r++) {
-            Integer[] ans = RowCounts[r];
+        for (int r = 0; r < settings.getRows(); r++) {
+            Integer[] ans = rowCounts[r];
             GridSolution s = new GridSolution();
-            s.createSolutions(ans, Settings.Rows);
+            s.createSolutions(ans, settings.getRows());
             sols[r] = s;
             long cnt = s.getSolutionCount();
             total = total * cnt;
-            System.out.printf("ROW %d, count:%d\n", r, cnt);
+            LOG.fine(String.format("Row %d: %d solution(s)", r, cnt));
         }
-        System.out.printf("TOTAL: %d\n", total);
+        LOG.fine(String.format("Total combinations to check: %d", total));
         return sols;
     }
 
-    long Counter;
-
     public boolean checkDuplicateSolutions(NanoGridBoard control) {
-        ControlBoard = control;
-        RowCounts = control.getRowCounts();
-        Rows = createRowSolutions();
-        char[][] b = new char[Settings.Columns][Settings.Rows];
-        Board = createNewBoard(b);
-        DuplicateCount = 0;
-        Counter = 0;
+        controlBoard = control;
+        rowCounts = control.getRowCounts();
+        rows = createRowSolutions();
+        board = new char[settings.getColumns()][settings.getRows()];
+        board = createNewBoard(board);
+        duplicateCount = 0;
+        counter = 0;
         createBoards(0);
-        return DuplicateCount > 1;
+        return duplicateCount > 1;
     }
 
     private void createBoards(int r) {
-        if (DuplicateCount > 1 || r >= Rows.length) {
+        if (duplicateCount > 1 || r >= rows.length) {
             return;
         }
-        GridSolution row = Rows[r];
+        GridSolution row = rows[r];
         int cnt = row.getSolutionCount();
         for (int i = 0; i < cnt; i++) {
             char[] ans = row.getSolution(i);
-            for (int c = 0; c < Board.length; c++) {
-                Board[c][r] = ans[c];
+            for (int c = 0; c < board.length; c++) {
+                board[c][r] = ans[c];
             }
-            ++Counter;
-            if (Counter % 100000 == 0) {
-                System.out.println(Counter);
+            ++counter;
+            if (counter % 100000 == 0) {
+                LOG.fine(String.format("Checked %d combinations...", counter));
             }
-            if (r == Rows.length - 1) {
-                NanoGridBoard ngb = new NanoGridBoard(Settings);
-                ngb.copy(Board);
-                if (ControlBoard.checkWin(ngb)) {
-                    System.out.printf("DUP:%d\n", ++DuplicateCount);
+            if (r == rows.length - 1) {
+                NanoGridBoard ngb = new NanoGridBoard(settings);
+                ngb.copy(board);
+                if (controlBoard.checkWin(ngb)) {
+                    ++duplicateCount;
+                    LOG.fine(String.format("Duplicate solution #%d found", duplicateCount));
                 }
             } else {
                 createBoards(r + 1);
@@ -71,10 +74,10 @@ public class GridSolutions {
         }
     }
 
-    private char[][] createNewBoard(char[][] board) {
-        char[][] b = new char[Settings.Columns][Settings.Rows];
-        for (int c = 0; c < board.length; c++) {
-            b[c] = board[c].clone();
+    private char[][] createNewBoard(char[][] src) {
+        char[][] b = new char[settings.getColumns()][settings.getRows()];
+        for (int c = 0; c < src.length; c++) {
+            b[c] = src[c].clone();
         }
         return b;
     }

@@ -1,28 +1,29 @@
 package nanogridgame;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import static nanogridgame.NanoGridBoard.FillChar;
 
 public class NanoGridGame {
 
-    private NanoGridBoard Board;
-    private char[][] PlayBoardColumns;
-    private char[][] PlayBoardRows;
-    private NanoGridParameters Settings;
+    private NanoGridBoard board;
+    private char[][] playBoardColumns;
+    private char[][] playBoardRows;
+    private NanoGridParameters settings;
 
     public NanoGridGame(NanoGridParameters p) {
-        Board = new NanoGridBoard(p);
-        Settings = p;
-        create(p.Columns, p.Rows);
+        board = new NanoGridBoard(p);
+        settings = p;
+        create(p.getColumns(), p.getRows());
     }
 
     public void create(int cols, int rows) {
-        Settings.Columns = cols;
-        Settings.Rows = rows;
-        Board.create(cols, rows);
-        PlayBoardColumns = new char[cols][rows];
-        PlayBoardRows = new char[rows][cols];
+        settings.setColumns(cols);
+        settings.setRows(rows);
+        board.create(cols, rows);
+        playBoardColumns = new char[cols][rows];
+        playBoardRows = new char[rows][cols];
     }
 
     public void create(int sz) {
@@ -30,43 +31,43 @@ public class NanoGridGame {
     }
 
     public void create() {
-        create(Settings.Columns, Settings.Rows);
+        create(settings.getColumns(), settings.getRows());
     }
 
     public NanoGridBoard getBoard() {
-        return Board;
+        return board;
     }
 
     public NanoGridParameters getSettings() {
-        return Settings;
+        return settings;
     }
 
     public void clearCell(int c, int r) {
-        PlayBoardColumns[c][r] = 0;
-        PlayBoardRows[r][c] = 0;
+        playBoardColumns[c][r] = 0;
+        playBoardRows[r][c] = 0;
     }
 
     public void setCell(int c, int r) {
-        PlayBoardColumns[c][r] = NanoGridBoard.FillChar;
-        PlayBoardRows[r][c] = NanoGridBoard.FillChar;
+        playBoardColumns[c][r] = NanoGridBoard.FillChar;
+        playBoardRows[r][c] = NanoGridBoard.FillChar;
     }
 
     public void setMark(int c, int r) {
-        PlayBoardColumns[c][r] = NanoGridBoard.MarkChar;
-        PlayBoardRows[r][c] = NanoGridBoard.MarkChar;
+        playBoardColumns[c][r] = NanoGridBoard.MarkChar;
+        playBoardRows[r][c] = NanoGridBoard.MarkChar;
     }
 
     public boolean checkWin() {
-        Integer[][] cols = Board.getColumnCounts();
+        Integer[][] cols = board.getColumnCounts();
         for (int c = 0; c < cols.length; c++) {
-            Integer[] cnts = getCellCount(PlayBoardColumns[c]);
+            Integer[] cnts = getCellCount(playBoardColumns[c]);
             if (!areEqual(cnts, cols[c])) {
                 return false;
             }
         }
-        Integer[][] rows = Board.getRowCounts();
+        Integer[][] rows = board.getRowCounts();
         for (int r = 0; r < rows.length; r++) {
-            Integer[] cnts = getCellCount(PlayBoardRows[r]);
+            Integer[] cnts = getCellCount(playBoardRows[r]);
             if (!areEqual(cnts, rows[r])) {
                 return false;
             }
@@ -77,8 +78,8 @@ public class NanoGridGame {
     private Integer[] getCellCount(char[] cary) {
         ArrayList<Integer> lst = new ArrayList<>();
         int cnt = 0;
-        for (int c = 0; c < cary.length; c++) {
-            if (cary[c] == FillChar) {
+        for (char c : cary) {
+            if (c == FillChar) {
                 ++cnt;
             } else if (cnt > 0) {
                 lst.add(cnt);
@@ -104,62 +105,54 @@ public class NanoGridGame {
         return true;
     }
 
-    public void loadBoard(File loadFile) {
+    public void loadBoard(File loadFile) throws IOException {
         NanoGridFile file = new NanoGridFile(this);
-        try {
-            file.deserialize(loadFile);
-        } catch (Exception ex) {
-            System.out.println(ex);
-        }
+        file.deserialize(loadFile);
     }
 
-    public void resetBoard(File loadFile) {
+    public void resetBoard(File loadFile) throws IOException {
         loadBoard(loadFile);
-        PlayBoardColumns = new char[Settings.Columns][Settings.Rows];
-        PlayBoardRows = new char[Settings.Rows][Settings.Columns];
+        playBoardColumns = new char[settings.getColumns()][settings.getRows()];
+        playBoardRows = new char[settings.getRows()][settings.getColumns()];
     }
 
-    public void saveGame(File output) {
+    public void saveGame(File output) throws IOException {
         NanoGridFile file = new NanoGridFile(this);
-        try {
-            file.serialize(output);
-        } catch (Exception ex) {
-            System.out.println(ex);
-        }
+        file.serialize(output);
     }
 
-    void setBoard(char[][] board) {
-        Board = new NanoGridBoard(Settings);
-        Board.copy(board);
+    void setBoard(char[][] src) {
+        board = new NanoGridBoard(settings);
+        board.copy(src);
     }
 
-    void updateSettings(NanoGridParameters settings) {
-        Settings = settings;
+    void updateSettings(NanoGridParameters newSettings) {
+        settings = newSettings;
         create();
     }
 
     public char[][] getPlayColumns() {
-        return PlayBoardColumns;
+        return playBoardColumns;
     }
 
     void setPlayColumns(char[][] cols) {
-        PlayBoardColumns = cols;
+        playBoardColumns = cols;
     }
 
     char[][] getPlayRows() {
-        return PlayBoardRows;
+        return playBoardRows;
     }
 
     public void setPlayRows(char[][] rows) {
-        PlayBoardRows = rows;
+        playBoardRows = rows;
     }
 
     public int getIncorrectMoves() {
         int cnt = 0;
-        for (int c = 0; c < Settings.Columns; c++) {
-            for (int r = 0; r < Settings.Rows; r++) {
-                if (Board.getCell(c, r) != NanoGridBoard.FillChar &&
-                        PlayBoardColumns[c][r] == NanoGridBoard.FillChar) {
+        for (int c = 0; c < settings.getColumns(); c++) {
+            for (int r = 0; r < settings.getRows(); r++) {
+                if (board.getCell(c, r) != NanoGridBoard.FillChar &&
+                        playBoardColumns[c][r] == NanoGridBoard.FillChar) {
                     ++cnt;
                 }
             }

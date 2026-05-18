@@ -13,4 +13,12 @@
     <artifactId>nanogrid-core</artifactId>
     <name>NanoGrid Core</name>
     <description>Core game logic: puzzle generation, game state, and file I/O</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
 </project>

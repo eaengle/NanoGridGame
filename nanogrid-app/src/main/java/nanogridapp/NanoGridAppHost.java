@@ -7,16 +7,17 @@ import nanogridgame.NanoGridParameters;
 
 public class NanoGridAppHost implements INanoGridHost {
 
-    NanoGridGame Game;
+    private NanoGridGame game;
 
-    public void CreateGame(int cols, int rows) {
+    public void createGame(int cols, int rows) {
         NanoGridParameters p = new NanoGridParameters();
-        Game = new NanoGridGame(p);
-        Game.create(cols, rows);
+        game = new NanoGridGame(p);
+        game.create(cols, rows);
     }
 
+    @Override
     public void displayGame() {
-        NanoGridBoard board = Game.getBoard();
+        NanoGridBoard board = game.getBoard();
         Integer[][] rcnts = board.getRowCounts();
         int rmax = getMaxLength(rcnts);
 
@@ -33,8 +34,8 @@ public class NanoGridAppHost implements INanoGridHost {
 
     private int getMaxLength(Integer[][] cnts) {
         int max = 0;
-        for (int i = 0; i < cnts.length; i++) {
-            if (cnts[i].length > max) max = cnts[i].length;
+        for (Integer[] cnt : cnts) {
+            if (cnt.length > max) max = cnt.length;
         }
         return max;
     }
@@ -46,7 +47,7 @@ public class NanoGridAppHost implements INanoGridHost {
     }
 
     private void displayColumnCounts(int rmax) {
-        NanoGridBoard board = Game.getBoard();
+        NanoGridBoard board = game.getBoard();
         Integer[][] ccnts = board.getColumnCounts();
         int cmax = getMaxLength(ccnts);
         for (int i = cmax; i > 0; i--) {

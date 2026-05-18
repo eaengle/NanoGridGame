@@ -13,15 +13,15 @@ public class NanoGridApp {
         s.createSolutions(cnt, 5);
 
         NanoGridParameters p = new NanoGridParameters();
-        p.Columns = 15;
-        p.Rows = 15;
-        p.MaxColumnSquares = 10;
-        p.MaxRowSquares = 10;
+        p.setColumns(15);
+        p.setRows(15);
+        p.setMaxColumnSquares(10);
+        p.setMaxRowSquares(10);
 
         NanoGridBoard control = new NanoGridBoard(p);
         control.printBoard(System.out);
         GridSolutions sols = new GridSolutions(p);
         boolean dup = sols.checkDuplicateSolutions(control);
-        System.out.printf("\nDuplicate found = %s\n", dup);
+        System.out.printf("%nDuplicate found = %s%n", dup);
     }
 }

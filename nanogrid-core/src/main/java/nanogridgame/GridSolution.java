@@ -4,40 +4,37 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 
 public class GridSolution {
-    private ArrayList<char[]> Solutions;
-    char[] Ary;
-    Integer[] Counts;
 
-    public GridSolution() {
-        Solutions = new ArrayList<>();
-    }
+    private final ArrayList<char[]> solutions = new ArrayList<>();
+    private char[] ary;
+    private Integer[] counts;
 
     public void createSolutions(Integer[] counts, int size) {
-        Counts = counts;
-        Ary = new char[size];
+        this.counts = counts;
+        ary = new char[size];
         fillArray(0, 0);
     }
 
     public int getSolutionCount() {
-        return Solutions.size();
+        return solutions.size();
     }
 
     public char[] getSolution(int idx) {
-        if (idx >= Solutions.size()) {
+        if (idx >= solutions.size()) {
             return null;
         }
-        return Solutions.get(idx);
+        return solutions.get(idx);
     }
 
     private void fillArray(int st, int idx) {
-        int cnt = Counts[idx];
-        for (int ctr = st; ctr <= Ary.length - cnt; ctr++) {
+        int cnt = counts[idx];
+        for (int ctr = st; ctr <= ary.length - cnt; ctr++) {
             clearArray(st);
             for (int i = ctr; i < ctr + cnt; i++) {
-                Ary[i] = NanoGridBoard.FillChar;
+                ary[i] = NanoGridBoard.FillChar;
             }
-            if (idx == Counts.length - 1) {
-                Solutions.add((char[]) Ary.clone());
+            if (idx == counts.length - 1) {
+                solutions.add(ary.clone());
             } else {
                 fillArray(ctr + cnt + 1, idx + 1);
             }
@@ -45,20 +42,20 @@ public class GridSolution {
     }
 
     private void clearArray(int st) {
-        for (int ctr = st; ctr < Ary.length; ctr++) {
-            Ary[ctr] = NanoGridBoard.EmptyChar;
+        for (int ctr = st; ctr < ary.length; ctr++) {
+            ary[ctr] = NanoGridBoard.EmptyChar;
         }
     }
 
     public void printSolutions(PrintStream out) {
-        for (int i = 0; i < Solutions.size(); i++) {
-            printSolution(Solutions.get(i), out);
+        for (char[] solution : solutions) {
+            printSolution(solution, out);
         }
     }
 
     private void printSolution(char[] chs, PrintStream out) {
-        for (int i = 0; i < chs.length; i++) {
-            out.printf("%s ", chs[i]);
+        for (char ch : chs) {
+            out.printf("%s ", ch);
         }
         out.println();
     }
