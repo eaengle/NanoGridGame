@@ -2,7 +2,11 @@ package my.nanogrid;
 
 import nanogridgame.NanoGridBoard;
 
+import javax.swing.AbstractAction;
+import javax.swing.Action;
+import javax.swing.InputMap;
 import javax.swing.JComponent;
+import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 import java.awt.BasicStroke;
 import java.awt.Color;
@@ -14,6 +18,8 @@ import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
+import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
@@ -35,6 +41,7 @@ class NanoGridBoardView extends JComponent {
     private InteractionMode interactionMode = InteractionMode.CYCLE;
     private boolean showSolution;
     private boolean winAnnounced;
+    private Point cursorCell;
 
     NanoGridBoardView(GameController controller, Runnable winHandler, CellMoveListener moveListener) {
         this.controller = controller;
@@ -45,6 +52,48 @@ class NanoGridBoardView extends JComponent {
         BoardMouseListener mouseListener = new BoardMouseListener();
         addMouseListener(mouseListener);
         addMouseMotionListener(mouseListener);
+        installKeyBindings();
+    }
+
+    private void installKeyBindings() {
+        InputMap im = getInputMap(WHEN_FOCUSED);
+        im.put(KeyStroke.getKeyStroke(KeyEvent.VK_UP,    0), "cursorUp");
+        im.put(KeyStroke.getKeyStroke(KeyEvent.VK_DOWN,  0), "cursorDown");
+        im.put(KeyStroke.getKeyStroke(KeyEvent.VK_LEFT,  0), "cursorLeft");
+        im.put(KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, 0), "cursorRight");
+        im.put(KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, 0), "cursorApply");
+
+        getActionMap().put("cursorUp",    cursorMoveAction( 0, -1));
+        getActionMap().put("cursorDown",  cursorMoveAction( 0,  1));
+        getActionMap().put("cursorLeft",  cursorMoveAction(-1,  0));
+        getActionMap().put("cursorRight", cursorMoveAction( 1,  0));
+        getActionMap().put("cursorApply", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (cursorCell != null) {
+                    lastAppliedCell = null;
+                    applyCellState(cursorCell, nextState(cursorCell));
+                }
+            }
+        });
+    }
+
+    private Action cursorMoveAction(int dx, int dy) {
+        return new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                int columns = controller.getSettings().getColumns();
+                int rows = controller.getSettings().getRows();
+                if (cursorCell == null) {
+                    cursorCell = new Point(0, 0);
+                } else {
+                    cursorCell = new Point(
+                            Math.max(0, Math.min(columns - 1, cursorCell.x + dx)),
+                            Math.max(0, Math.min(rows - 1, cursorCell.y + dy)));
+                }
+                repaint();
+            }
+        };
     }
 
     void refreshBoard() {
@@ -53,6 +102,7 @@ class NanoGridBoardView extends JComponent {
         measureStart = null;
         measureEnd = null;
         lastAppliedCell = null;
+        cursorCell = null;
         revalidate();
         repaint();
     }
@@ -104,6 +154,7 @@ class NanoGridBoardView extends JComponent {
             paintClues(g);
             paintCells(g);
             paintGrid(g);
+            paintCursor(g);
             paintMeasureValue(g);
         } finally {
             g.dispose();
@@ -273,6 +324,14 @@ class NanoGridBoardView extends JComponent {
             int y = boardBounds.y + r * cellSize;
             g.drawLine(boardBounds.x, y, boardBounds.x + boardBounds.width, y);
         }
+    }
+
+    private void paintCursor(Graphics2D g) {
+        if (cursorCell == null) return;
+        Rectangle cell = cellRectangle(cursorCell.x, cursorCell.y);
+        g.setColor(ThemeManager.current().cursor);
+        g.setStroke(new BasicStroke(2f));
+        g.drawRect(cell.x + 1, cell.y + 1, cell.width - 2, cell.height - 2);
     }
 
     private void paintMeasureValue(Graphics2D g) {
