@@ -18,12 +18,29 @@ Requires Java 8+ and [Apache Maven](https://maven.apache.org/).
 mvn package
 ```
 
+This also creates ready-to-deploy desktop bundles:
+
+- `nanogrid-ui/target/nanogrid-ui-1.0-SNAPSHOT-distribution.zip`
+- `nanogrid-ui/target/nanogrid-ui-1.0-SNAPSHOT-distribution.tar.gz`
+
 ## Running
 
 Launch the desktop UI:
 
 ```bash
 java -jar nanogrid-ui/target/nanogrid-ui-1.0-SNAPSHOT.jar
+```
+
+Or unzip the distribution bundle and run the launcher for your platform:
+
+```bash
+bin/nanogrid
+```
+
+On Windows:
+
+```bat
+bin\nanogrid.bat
 ```
 
 Run the console test harness:
