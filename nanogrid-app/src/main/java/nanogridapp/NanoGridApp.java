@@ -15,8 +15,6 @@ public class NanoGridApp {
         NanoGridParameters p = new NanoGridParameters();
         p.setColumns(15);
         p.setRows(15);
-        p.setMaxColumnSquares(10);
-        p.setMaxRowSquares(10);
 
         NanoGridBoard control = new NanoGridBoard(p);
         control.printBoard(System.out);

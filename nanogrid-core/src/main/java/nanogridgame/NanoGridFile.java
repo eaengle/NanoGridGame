@@ -65,9 +65,6 @@ public class NanoGridFile {
         root.appendChild(e);
         addValue(p.getColumns(), "Columns", e, doc);
         addValue(p.getRows(), "Rows", e, doc);
-        addValue(p.getMaxColumnSquares(), "MaxColumnSquares", e, doc);
-        addValue(p.getMaxRowSquares(), "MaxRowSquares", e, doc);
-        addValue(p.getRowBreakChance(), "RowBreakChance", e, doc);
         addValue(p.getDifficulty().name(), "Difficulty", e, doc);
         addValue(p.isUseSeed(), "UseSeed", e, doc);
         addValue(p.getSeed(), "Seed", e, doc);
@@ -166,12 +163,6 @@ public class NanoGridFile {
                 p.setColumns(Integer.parseInt(val));
             } else if ("Rows".equals(name)) {
                 p.setRows(Integer.parseInt(val));
-            } else if ("MaxColumnSquares".equals(name)) {
-                p.setMaxColumnSquares(Integer.parseInt(val));
-            } else if ("MaxRowSquares".equals(name)) {
-                p.setMaxRowSquares(Integer.parseInt(val));
-            } else if ("RowBreakChance".equals(name)) {
-                p.setRowBreakChance(Integer.parseInt(val));
             } else if ("Difficulty".equals(name)) {
                 p.setDifficulty(PuzzleDifficulty.valueOf(val));
             } else if ("UseSeed".equals(name)) {

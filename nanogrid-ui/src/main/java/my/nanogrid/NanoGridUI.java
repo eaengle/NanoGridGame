@@ -1,37 +1,34 @@
 package my.nanogrid;
 
 import nanogridgame.NanoGridParameters;
-import nanogridgame.PuzzleDifficulty;
 import nanogridgame.GameMetadata;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.ButtonGroup;
 import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JComboBox;
 import javax.swing.InputMap;
 import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JMenu;
-import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
 import javax.swing.JSeparator;
 import javax.swing.JToolBar;
 import javax.swing.JToggleButton;
 import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
-import javax.swing.JTextField;
 import javax.swing.UIManager;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.BorderLayout;
+import javax.swing.BoxLayout;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
@@ -50,12 +47,8 @@ public class NanoGridUI extends JFrame {
     private final JLabel statusLabel = new JLabel("Ready");
     private final JLabel timerLabel = new JLabel("00:00");
     private final JLabel modeLabel = new JLabel("Cycle");
-    private final JComboBox<PuzzleDifficulty> difficultyCombo = new JComboBox<>(PuzzleDifficulty.values());
-    private final JCheckBox symmetricCheckBox = new JCheckBox("Symmetric");
-    private final JTextField seedField = new JTextField(9);
-
     private InstructionDialog instructions;
-    private GridSizeDialog gridDialog;
+    private NewPuzzleDialog newPuzzleDialog;
     private GameController controller;
     private NanoGridBoardView boardView;
     private Timer timer;
@@ -68,7 +61,6 @@ public class NanoGridUI extends JFrame {
     private Action undoAction;
     private Action redoAction;
     private Action refreshAction;
-    private Action optionsAction;
     private Action loadGameAction;
     private Action saveGameAction;
     private Action loadPuzzleAction;
@@ -78,7 +70,6 @@ public class NanoGridUI extends JFrame {
     private Action showAction;
     private Action instructionsAction;
     private Action aboutAction;
-    private Action exitAction;
 
     public NanoGridUI() {
         initCustom();
@@ -88,12 +79,9 @@ public class NanoGridUI extends JFrame {
         NanoGridParameters p = new NanoGridParameters();
         p.setColumns(15);
         p.setRows(15);
-        p.setMaxColumnSquares(6);
-        p.setMaxRowSquares(6);
-        p.setRowBreakChance(0);
 
         controller = new GameController(p);
-        gridDialog = new GridSizeDialog(this, true);
+        newPuzzleDialog = new NewPuzzleDialog(this);
         instructions = new InstructionDialog(this, true);
 
         createActions();
@@ -105,9 +93,36 @@ public class NanoGridUI extends JFrame {
                 verifyExit();
             }
         });
-        setJMenuBar(createMenuBar());
-        add(createToolBar(), BorderLayout.NORTH);
-        add(mainPanel, BorderLayout.CENTER);
+        JPanel toolBarPanel = createToolBarPanel();
+        JPanel sidePanel = createSidePanel();
+
+        JPanel cornerPanel = new JPanel(new GridBagLayout());
+        cornerPanel.setPreferredSize(new Dimension(
+                sidePanel.getPreferredSize().width,
+                toolBarPanel.getPreferredSize().height));
+        JButton helpButton = new JButton("?");
+        helpButton.setToolTipText("Help / About");
+        JPopupMenu helpPopup = new JPopupMenu();
+        helpPopup.add(new JMenuItem(instructionsAction));
+        helpPopup.add(new JMenuItem(aboutAction));
+        helpButton.addActionListener(new java.awt.event.ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                helpPopup.show(helpButton, 0, helpButton.getHeight());
+            }
+        });
+        cornerPanel.add(helpButton);
+
+        JPanel leftColumn = new JPanel(new BorderLayout());
+        leftColumn.add(cornerPanel, BorderLayout.NORTH);
+        leftColumn.add(sidePanel, BorderLayout.CENTER);
+
+        JPanel rightArea = new JPanel(new BorderLayout());
+        rightArea.add(toolBarPanel, BorderLayout.NORTH);
+        rightArea.add(mainPanel, BorderLayout.CENTER);
+
+        add(leftColumn, BorderLayout.WEST);
+        add(rightArea, BorderLayout.CENTER);
         add(createStatusBar(), BorderLayout.SOUTH);
         installShortcuts();
         setup();
@@ -123,19 +138,7 @@ public class NanoGridUI extends JFrame {
         setLocationRelativeTo(null);
     }
 
-    public void reset() {
-        if (!applyGenerationControls(controller.getSettings())) {
-            return;
-        }
-        controller.newGame();
-        redraw();
-        resetSessionStats();
-    }
-
     public void reset(NanoGridParameters newSettings) {
-        if (!applyGenerationControls(newSettings)) {
-            return;
-        }
         controller.setSettings(newSettings);
         controller.newGame();
         redraw();
@@ -180,7 +183,9 @@ public class NanoGridUI extends JFrame {
         newPuzzleAction = new AbstractAction("New") {
             @Override
             public void actionPerformed(ActionEvent e) {
-                reset();
+                newPuzzleDialog.setUI(NanoGridUI.this);
+                newPuzzleDialog.setLocationRelativeTo(NanoGridUI.this);
+                newPuzzleDialog.setVisible(true);
             }
         };
         undoAction = new AbstractAction("Undo") {
@@ -199,13 +204,6 @@ public class NanoGridUI extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
                 refreshGame();
-            }
-        };
-        optionsAction = new AbstractAction("Options...") {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                gridDialog.setUI(NanoGridUI.this);
-                gridDialog.setVisible(true);
             }
         };
         loadGameAction = new AbstractAction("Load Game...") {
@@ -265,53 +263,16 @@ public class NanoGridUI extends JFrame {
                         JOptionPane.PLAIN_MESSAGE);
             }
         };
-        exitAction = new AbstractAction("Exit") {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                verifyExit();
-            }
-        };
     }
 
-    private JMenuBar createMenuBar() {
-        JMenuBar menuBar = new JMenuBar();
-
-        JMenu file = new JMenu("File");
-        file.add(new JMenuItem(loadGameAction));
-        file.add(new JMenuItem(saveGameAction));
-        file.add(new JSeparator());
-        file.add(new JMenuItem(loadPuzzleAction));
-        file.add(new JMenuItem(savePuzzleAction));
-        file.add(new JSeparator());
-        file.add(new JMenuItem(exitAction));
-        menuBar.add(file);
-
-        JMenu edit = new JMenu("Edit");
-        edit.add(new JMenuItem(undoAction));
-        edit.add(new JMenuItem(redoAction));
-        menuBar.add(edit);
-
-        JMenu settings = new JMenu("Settings");
-        settings.add(new JMenuItem(optionsAction));
-        settings.add(new JMenuItem(refreshAction));
-        settings.add(new JMenuItem(newPuzzleAction));
-        menuBar.add(settings);
-
-        JMenu hint = new JMenu("Hint");
-        hint.add(new JMenuItem(checkAction));
-        hint.add(new JMenuItem(peekAction));
-        hint.add(new JMenuItem(showAction));
-        menuBar.add(hint);
-
-        JMenu help = new JMenu("Help");
-        help.add(new JMenuItem(instructionsAction));
-        help.add(new JMenuItem(aboutAction));
-        menuBar.add(help);
-
-        return menuBar;
+    private JPanel createToolBarPanel() {
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.add(createPlayToolBar());
+        return panel;
     }
 
-    private JToolBar createToolBar() {
+    private JToolBar createPlayToolBar() {
         JToolBar toolBar = new JToolBar();
         toolBar.setFloatable(false);
         toolBar.add(newPuzzleAction);
@@ -319,34 +280,74 @@ public class NanoGridUI extends JFrame {
         toolBar.add(redoAction);
         toolBar.add(refreshAction);
         toolBar.addSeparator();
-        toolBar.add(new JLabel("Difficulty "));
-        toolBar.add(difficultyCombo);
-        toolBar.add(symmetricCheckBox);
-        toolBar.add(new JLabel("Seed "));
-        seedField.setToolTipText("Optional reproducible puzzle seed");
-        toolBar.add(seedField);
-        JButton applyButton = new JButton("Apply");
-        applyButton.setToolTipText("Generate a new puzzle with these options");
-        applyButton.addActionListener(new java.awt.event.ActionListener() {
+        toolBar.add(createPopupButton("Save", "Save game or puzzle", saveGameAction, savePuzzleAction));
+        toolBar.add(createPopupButton("Load", "Load game or puzzle", loadGameAction, loadPuzzleAction));
+        return toolBar;
+    }
+
+    private JButton createPopupButton(String label, String tooltip, Action... actions) {
+        JButton button = new JButton(label);
+        button.setToolTipText(tooltip);
+        JPopupMenu popup = new JPopupMenu();
+        for (Action action : actions) {
+            popup.add(new JMenuItem(action));
+        }
+        button.addActionListener(new java.awt.event.ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                reset();
+                popup.show(button, 0, button.getHeight());
             }
         });
-        toolBar.add(applyButton);
-        toolBar.addSeparator();
-        toolBar.add(createModeButton("Cycle", InteractionMode.CYCLE, true));
-        toolBar.add(createModeButton("Fill", InteractionMode.FILL, false));
-        toolBar.add(createModeButton("Mark", InteractionMode.MARK, false));
-        toolBar.add(createModeButton("Erase", InteractionMode.ERASE, false));
-        toolBar.addSeparator();
-        toolBar.add(checkAction);
-        toolBar.add(peekAction);
-        toolBar.add(showAction);
-        toolBar.addSeparator();
-        toolBar.add(saveGameAction);
-        toolBar.add(loadGameAction);
-        return toolBar;
+        return button;
+    }
+
+    private JPanel createSidePanel() {
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.setBorder(javax.swing.BorderFactory.createEmptyBorder(6, 4, 6, 4));
+
+        addSideButton(panel, createModeButton("Cycle", InteractionMode.CYCLE, true));
+        addSideButton(panel, createModeButton("Fill", InteractionMode.FILL, false));
+        addSideButton(panel, createModeButton("Mark", InteractionMode.MARK, false));
+        addSideButton(panel, createModeButton("Erase", InteractionMode.ERASE, false));
+
+        JSeparator sep = new JSeparator(JSeparator.HORIZONTAL);
+        sep.setMaximumSize(new Dimension(Integer.MAX_VALUE, 8));
+        panel.add(javax.swing.Box.createVerticalStrut(6));
+        panel.add(sep);
+        panel.add(javax.swing.Box.createVerticalStrut(6));
+
+        addSideButton(panel, new JButton(checkAction));
+        addSideButton(panel, new JButton(peekAction));
+        addSideButton(panel, new JButton(showAction));
+
+        JSeparator sep2 = new JSeparator(JSeparator.HORIZONTAL);
+        sep2.setMaximumSize(new Dimension(Integer.MAX_VALUE, 8));
+        panel.add(javax.swing.Box.createVerticalStrut(6));
+        panel.add(sep2);
+        panel.add(javax.swing.Box.createVerticalStrut(6));
+
+        JToggleButton darkButton = new JToggleButton("Dark");
+        darkButton.setSelected(ThemeManager.isDark());
+        darkButton.addActionListener(new java.awt.event.ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                ThemeManager.setDark(darkButton.isSelected());
+                if (boardView != null) {
+                    boardView.repaint();
+                }
+            }
+        });
+        addSideButton(panel, darkButton);
+
+        return panel;
+    }
+
+    private void addSideButton(JPanel panel, JComponent button) {
+        button.setAlignmentX(JComponent.CENTER_ALIGNMENT);
+        button.setMaximumSize(new Dimension(Integer.MAX_VALUE, button.getPreferredSize().height));
+        panel.add(button);
+        panel.add(javax.swing.Box.createVerticalStrut(2));
     }
 
     private JToggleButton createModeButton(String text, final InteractionMode mode, boolean selected) {
@@ -451,7 +452,6 @@ public class NanoGridUI extends JFrame {
         }
         try {
             controller.loadGame(loadFile);
-            updateGenerationControls(controller.getSettings());
             redraw();
             restoreSessionStats(controller.getMetadata());
             statusLabel.setText("Loaded game");
@@ -467,7 +467,6 @@ public class NanoGridUI extends JFrame {
         }
         try {
             controller.loadPuzzle(loadFile);
-            updateGenerationControls(controller.getSettings());
             redraw();
             resetSessionStats();
             statusLabel.setText("Loaded puzzle");
@@ -578,8 +577,7 @@ public class NanoGridUI extends JFrame {
         CellMove move = undoStack.pop();
         applyMoveState(move, move.getBefore());
         redoStack.push(move);
-        statusLabel.setText("Moves: " + moveCount + " (undo)");
-        repaintBoard();
+        updateAfterUndoRedo(" (undo)");
     }
 
     private void redo() {
@@ -590,8 +588,7 @@ public class NanoGridUI extends JFrame {
         CellMove move = redoStack.pop();
         applyMoveState(move, move.getAfter());
         undoStack.push(move);
-        statusLabel.setText("Moves: " + moveCount + " (redo)");
-        repaintBoard();
+        updateAfterUndoRedo(" (redo)");
     }
 
     private void applyMoveState(CellMove move, char state) {
@@ -604,10 +601,24 @@ public class NanoGridUI extends JFrame {
         }
     }
 
-    private void repaintBoard() {
+    private void updateAfterUndoRedo(String statusSuffix) {
+        boolean newlySolved = false;
         if (boardView != null) {
-            boardView.repaint();
+            newlySolved = boardView.refreshAfterProgrammaticMove();
         }
+        if (newlySolved) {
+            winGame();
+            return;
+        }
+        boolean solved = controller.checkWin();
+        if (solved) {
+            statusLabel.setText("Solved in " + timerLabel.getText() + " with " + moveCount + " moves");
+            return;
+        }
+        if (timer == null) {
+            startTimer();
+        }
+        statusLabel.setText("Moves: " + moveCount + statusSuffix);
     }
 
     private void winGame() {
@@ -662,29 +673,6 @@ public class NanoGridUI extends JFrame {
         long minutes = elapsedSeconds / 60;
         long seconds = elapsedSeconds % 60;
         return String.format("%02d:%02d", minutes, seconds);
-    }
-
-    private boolean applyGenerationControls(NanoGridParameters settings) {
-        settings.setDifficulty((PuzzleDifficulty) difficultyCombo.getSelectedItem());
-        settings.setSymmetric(symmetricCheckBox.isSelected());
-        String seedText = seedField.getText().trim();
-        if (seedText.isEmpty()) {
-            settings.clearSeed();
-            return true;
-        }
-        try {
-            settings.setSeed(Long.parseLong(seedText));
-            return true;
-        } catch (NumberFormatException ex) {
-            showError("Seed must be a whole number.");
-            return false;
-        }
-    }
-
-    private void updateGenerationControls(NanoGridParameters settings) {
-        difficultyCombo.setSelectedItem(settings.getDifficulty());
-        symmetricCheckBox.setSelected(settings.isSymmetric());
-        seedField.setText(settings.isUseSeed() ? String.valueOf(settings.getSeed()) : "");
     }
 
     private void startTimer() {

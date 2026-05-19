@@ -19,18 +19,6 @@ import java.awt.event.MouseEvent;
 
 class NanoGridBoardView extends JComponent {
 
-    private static final Color BACKGROUND = new Color(244, 246, 248);
-    private static final Color CLUE_BACKGROUND = new Color(232, 236, 241);
-    private static final Color GRID_LINE = new Color(178, 187, 198);
-    private static final Color GRID_LINE_STRONG = new Color(96, 111, 128);
-    private static final Color FILL = new Color(35, 44, 54);
-    private static final Color MARK = new Color(197, 74, 72);
-    private static final Color HOVER = new Color(216, 232, 246);
-    private static final Color MEASURE = new Color(93, 173, 226);
-    private static final Color CORRECT_REVEAL = new Color(52, 151, 93);
-    private static final Color MISSED_REVEAL = new Color(34, 45, 56);
-    private static final Color TEXT = new Color(42, 50, 60);
-
     private final GameController controller;
     private final Runnable winHandler;
     private final CellMoveListener moveListener;
@@ -53,7 +41,6 @@ class NanoGridBoardView extends JComponent {
         this.winHandler = winHandler;
         this.moveListener = moveListener;
         setOpaque(true);
-        setBackground(BACKGROUND);
         setFocusable(true);
         BoardMouseListener mouseListener = new BoardMouseListener();
         addMouseListener(mouseListener);
@@ -77,6 +64,24 @@ class NanoGridBoardView extends JComponent {
 
     void setInteractionMode(InteractionMode interactionMode) {
         this.interactionMode = interactionMode;
+    }
+
+    boolean refreshAfterProgrammaticMove() {
+        lastAppliedCell = null;
+        boolean solved = controller.checkWin();
+        if (solved) {
+            showSolution = true;
+            if (!winAnnounced) {
+                winAnnounced = true;
+                repaint();
+                return true;
+            }
+        } else {
+            showSolution = false;
+            winAnnounced = false;
+        }
+        repaint();
+        return false;
     }
 
     @Override
@@ -123,9 +128,10 @@ class NanoGridBoardView extends JComponent {
     }
 
     private void paintBackground(Graphics2D g) {
-        g.setColor(BACKGROUND);
+        ColorTheme theme = ThemeManager.current();
+        g.setColor(theme.background);
         g.fillRect(0, 0, getWidth(), getHeight());
-        g.setColor(CLUE_BACKGROUND);
+        g.setColor(theme.clueBackground);
         g.fillRect(boardBounds.x - clueWidth, boardBounds.y, clueWidth, boardBounds.height);
         g.fillRect(boardBounds.x, boardBounds.y - clueHeight, boardBounds.width, clueHeight);
         g.fillRect(boardBounds.x - clueWidth, boardBounds.y - clueHeight, clueWidth, clueHeight);
@@ -133,7 +139,7 @@ class NanoGridBoardView extends JComponent {
 
     private void paintClues(Graphics2D g) {
         g.setFont(getClueFont());
-        g.setColor(TEXT);
+        g.setColor(ThemeManager.current().text);
         FontMetrics metrics = g.getFontMetrics();
         Integer[][] rowCounts = controller.getBoard().getRowCounts();
         Integer[][] columnCounts = controller.getBoard().getColumnCounts();
@@ -169,15 +175,17 @@ class NanoGridBoardView extends JComponent {
     }
 
     private void paintHighlights(Graphics2D g) {
+        ColorTheme theme = ThemeManager.current();
         if (hoverCell != null) {
-            g.setColor(HOVER);
+            g.setColor(theme.hover);
             g.fillRect(boardBounds.x, boardBounds.y + hoverCell.y * cellSize, boardBounds.width, cellSize);
             g.fillRect(boardBounds.x + hoverCell.x * cellSize, boardBounds.y, cellSize, boardBounds.height);
         }
 
         if (measureStart != null && measureEnd != null &&
                 (measureStart.x == measureEnd.x || measureStart.y == measureEnd.y)) {
-            g.setColor(new Color(MEASURE.getRed(), MEASURE.getGreen(), MEASURE.getBlue(), 90));
+            Color m = theme.measure;
+            g.setColor(new Color(m.getRed(), m.getGreen(), m.getBlue(), 90));
             int minCol = Math.min(measureStart.x, measureEnd.x);
             int maxCol = Math.max(measureStart.x, measureEnd.x);
             int minRow = Math.min(measureStart.y, measureEnd.y);
@@ -190,6 +198,7 @@ class NanoGridBoardView extends JComponent {
     }
 
     private void paintCells(Graphics2D g) {
+        ColorTheme theme = ThemeManager.current();
         NanoGridBoard board = controller.getBoard();
         char[][] playerCells = controller.getPlayColumns();
         for (int c = 0; c < controller.getSettings().getColumns(); c++) {
@@ -197,10 +206,10 @@ class NanoGridBoardView extends JComponent {
                 Rectangle cell = cellRectangle(c, r);
                 char player = playerCells[c][r];
                 if (showSolution && board.getCell(c, r) == NanoGridBoard.FillChar) {
-                    g.setColor(player == NanoGridBoard.FillChar ? CORRECT_REVEAL : MISSED_REVEAL);
+                    g.setColor(player == NanoGridBoard.FillChar ? theme.correctReveal : theme.missedReveal);
                     g.fillRect(cell.x + 2, cell.y + 2, cell.width - 3, cell.height - 3);
                 } else if (player == NanoGridBoard.FillChar) {
-                    g.setColor(FILL);
+                    g.setColor(theme.fill);
                     g.fillRect(cell.x + 2, cell.y + 2, cell.width - 3, cell.height - 3);
                 } else if (player == NanoGridBoard.MarkChar) {
                     paintMark(g, cell);
@@ -211,25 +220,26 @@ class NanoGridBoardView extends JComponent {
 
     private void paintMark(Graphics2D g, Rectangle cell) {
         int pad = Math.max(4, cellSize / 4);
-        g.setColor(MARK);
+        g.setColor(ThemeManager.current().mark);
         g.setStroke(new BasicStroke(Math.max(2f, cellSize / 12f), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
         g.drawLine(cell.x + pad, cell.y + pad, cell.x + cell.width - pad, cell.y + cell.height - pad);
         g.drawLine(cell.x + cell.width - pad, cell.y + pad, cell.x + pad, cell.y + cell.height - pad);
     }
 
     private void paintGrid(Graphics2D g) {
+        ColorTheme theme = ThemeManager.current();
         int columns = controller.getSettings().getColumns();
         int rows = controller.getSettings().getRows();
         for (int c = 0; c <= columns; c++) {
             boolean strong = c % 5 == 0;
-            g.setColor(strong ? GRID_LINE_STRONG : GRID_LINE);
+            g.setColor(strong ? theme.gridLineStrong : theme.gridLine);
             g.setStroke(new BasicStroke(strong ? 1.6f : 1f));
             int x = boardBounds.x + c * cellSize;
             g.drawLine(x, boardBounds.y, x, boardBounds.y + boardBounds.height);
         }
         for (int r = 0; r <= rows; r++) {
             boolean strong = r % 5 == 0;
-            g.setColor(strong ? GRID_LINE_STRONG : GRID_LINE);
+            g.setColor(strong ? theme.gridLineStrong : theme.gridLine);
             g.setStroke(new BasicStroke(strong ? 1.6f : 1f));
             int y = boardBounds.y + r * cellSize;
             g.drawLine(boardBounds.x, y, boardBounds.x + boardBounds.width, y);
@@ -250,9 +260,10 @@ class NanoGridBoardView extends JComponent {
         int size = Math.max(42, metrics.stringWidth(text) + 24);
         int x = boardBounds.x - clueWidth + (clueWidth - size) / 2;
         int y = boardBounds.y - clueHeight + (clueHeight - size) / 2;
-        g.setColor(MEASURE);
+        ColorTheme theme = ThemeManager.current();
+        g.setColor(theme.measure);
         g.fillRoundRect(x, y, size, size, 8, 8);
-        g.setColor(Color.WHITE);
+        g.setColor(theme.measureText);
         g.drawString(text, x + (size - metrics.stringWidth(text)) / 2,
                 y + (size + metrics.getAscent() - metrics.getDescent()) / 2);
     }

@@ -32,9 +32,6 @@ class NanoGridJsonFile {
         json.append("  \"settings\": {\n");
         appendSetting(json, "columns", game.getSettings().getColumns(), true);
         appendSetting(json, "rows", game.getSettings().getRows(), true);
-        appendSetting(json, "maxColumnSquares", game.getSettings().getMaxColumnSquares(), true);
-        appendSetting(json, "maxRowSquares", game.getSettings().getMaxRowSquares(), true);
-        appendSetting(json, "rowBreakChance", game.getSettings().getRowBreakChance(), true);
         appendSetting(json, "difficulty", game.getSettings().getDifficulty().name(), true);
         appendSetting(json, "useSeed", game.getSettings().isUseSeed(), true);
         appendSetting(json, "seed", game.getSettings().getSeed(), true);
@@ -134,9 +131,6 @@ class NanoGridJsonFile {
         NanoGridParameters settings = new NanoGridParameters();
         settings.setColumns(readInt(settingsJson, "columns"));
         settings.setRows(readInt(settingsJson, "rows"));
-        settings.setMaxColumnSquares(readInt(settingsJson, "maxColumnSquares"));
-        settings.setMaxRowSquares(readInt(settingsJson, "maxRowSquares"));
-        settings.setRowBreakChance(readInt(settingsJson, "rowBreakChance"));
         settings.setDifficulty(PuzzleDifficulty.valueOf(readString(settingsJson, "difficulty", settings.getDifficulty().name())));
         settings.setSeed(readLong(settingsJson, "seed", settings.getSeed()));
         settings.setUseSeed(readBoolean(settingsJson, "useSeed", settings.isUseSeed()));

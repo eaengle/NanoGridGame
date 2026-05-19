@@ -14,9 +14,6 @@ public class NanoGridBoardTest {
         params = new NanoGridParameters();
         params.setColumns(5);
         params.setRows(5);
-        params.setMaxColumnSquares(3);
-        params.setMaxRowSquares(3);
-        params.setRowBreakChance(50);
         board = new NanoGridBoard(params);
     }
 
