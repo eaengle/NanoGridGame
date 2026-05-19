@@ -100,8 +100,8 @@ class NanoGridBoardView extends JComponent {
             g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
             calculateLayout(g);
             paintBackground(g);
-            paintClues(g);
             paintHighlights(g);
+            paintClues(g);
             paintCells(g);
             paintGrid(g);
             paintMeasureValue(g);
@@ -178,8 +178,10 @@ class NanoGridBoardView extends JComponent {
         ColorTheme theme = ThemeManager.current();
         if (hoverCell != null) {
             g.setColor(theme.hover);
-            g.fillRect(boardBounds.x, boardBounds.y + hoverCell.y * cellSize, boardBounds.width, cellSize);
-            g.fillRect(boardBounds.x + hoverCell.x * cellSize, boardBounds.y, cellSize, boardBounds.height);
+            // row: board + clue band to the left
+            g.fillRect(boardBounds.x - clueWidth, boardBounds.y + hoverCell.y * cellSize, boardBounds.width + clueWidth, cellSize);
+            // column: board + clue band above
+            g.fillRect(boardBounds.x + hoverCell.x * cellSize, boardBounds.y - clueHeight, cellSize, boardBounds.height + clueHeight);
         }
 
         if (measureStart != null && measureEnd != null &&

@@ -22,7 +22,20 @@ public class NewPuzzleDialog extends JDialog {
     private final JSpinner rowSpinner = new JSpinner(new SpinnerNumberModel(15, 5, 35, 1));
     private final JComboBox<PuzzleDifficulty> difficultyCombo = new JComboBox<>(PuzzleDifficulty.values());
     private final JCheckBox symmetricCheckBox = new JCheckBox();
-    private final JTextField seedField = new JTextField(10);
+    private final JTextField seedField = new JTextField(10) {
+        @Override
+        protected void paintComponent(java.awt.Graphics g) {
+            super.paintComponent(g);
+            if (getText().isEmpty() && !isFocusOwner()) {
+                java.awt.Graphics2D g2 = (java.awt.Graphics2D) g.create();
+                g2.setColor(new java.awt.Color(160, 160, 160));
+                java.awt.FontMetrics fm = g2.getFontMetrics();
+                java.awt.Insets ins = getInsets();
+                g2.drawString("e.g. 42", ins.left + 2, ins.top + fm.getAscent());
+                g2.dispose();
+            }
+        }
+    };
 
     private NanoGridUI ui;
 
@@ -49,13 +62,15 @@ public class NewPuzzleDialog extends JDialog {
         sc.insets = new Insets(6, 8, 6, 8);
         form.add(new JSeparator(), sc);
 
+        difficultyCombo.setToolTipText("Controls how densely filled the puzzle is");
         addRow(form, row++, "Difficulty", difficultyCombo);
+        symmetricCheckBox.setToolTipText("Generates a puzzle with 180° rotational symmetry");
         addRow(form, row++, "Symmetric", symmetricCheckBox);
         addRow(form, row, "Seed", seedField);
-        seedField.setToolTipText("Optional: enter a number for a reproducible puzzle");
+        seedField.setToolTipText("Optional: enter a whole number for a reproducible puzzle");
 
         JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 8));
-        JButton ok = new JButton("OK");
+        JButton ok = new JButton("Generate");
         JButton cancel = new JButton("Cancel");
         buttons.add(ok);
         buttons.add(cancel);

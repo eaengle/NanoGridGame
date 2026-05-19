@@ -188,36 +188,44 @@ public class NanoGridUI extends JFrame {
                 newPuzzleDialog.setVisible(true);
             }
         };
+        newPuzzleAction.putValue(Action.SHORT_DESCRIPTION, "New Puzzle (Ctrl+N)");
         undoAction = new AbstractAction("Undo") {
             @Override
             public void actionPerformed(ActionEvent e) {
                 undo();
             }
         };
+        undoAction.putValue(Action.SHORT_DESCRIPTION, "Undo (Ctrl+Z)");
+        undoAction.setEnabled(false);
         redoAction = new AbstractAction("Redo") {
             @Override
             public void actionPerformed(ActionEvent e) {
                 redo();
             }
         };
+        redoAction.putValue(Action.SHORT_DESCRIPTION, "Redo (Ctrl+Y)");
+        redoAction.setEnabled(false);
         refreshAction = new AbstractAction("Refresh") {
             @Override
             public void actionPerformed(ActionEvent e) {
                 refreshGame();
             }
         };
+        refreshAction.putValue(Action.SHORT_DESCRIPTION, "Clear board progress (Ctrl+R)");
         loadGameAction = new AbstractAction("Load Game...") {
             @Override
             public void actionPerformed(ActionEvent e) {
                 loadGame();
             }
         };
+        loadGameAction.putValue(Action.SHORT_DESCRIPTION, "Load saved game (Ctrl+O)");
         saveGameAction = new AbstractAction("Save Game...") {
             @Override
             public void actionPerformed(ActionEvent e) {
                 saveGame();
             }
         };
+        saveGameAction.putValue(Action.SHORT_DESCRIPTION, "Save game (Ctrl+S)");
         loadPuzzleAction = new AbstractAction("Load Puzzle...") {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -236,18 +244,21 @@ public class NanoGridUI extends JFrame {
                 checkGame();
             }
         };
+        checkAction.putValue(Action.SHORT_DESCRIPTION, "Count incorrect moves (Ctrl+K)");
         peekAction = new AbstractAction("Peek") {
             @Override
             public void actionPerformed(ActionEvent e) {
                 peekGame();
             }
         };
+        peekAction.putValue(Action.SHORT_DESCRIPTION, "Briefly reveal solution for 1 second");
         showAction = new AbstractAction("Show") {
             @Override
             public void actionPerformed(ActionEvent e) {
                 displayGame(true);
             }
         };
+        showAction.putValue(Action.SHORT_DESCRIPTION, "Reveal the full solution");
         instructionsAction = new AbstractAction("Instructions") {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -557,6 +568,14 @@ public class NanoGridUI extends JFrame {
     }
 
     private void refreshGame() {
+        if (moveCount > 0) {
+            int ans = JOptionPane.showConfirmDialog(this,
+                    "Clear all progress on this puzzle?", "Refresh",
+                    OK_CANCEL_OPTION, WARNING_MESSAGE);
+            if (ans != OK_OPTION) {
+                return;
+            }
+        }
         for (int c = 0; c < getSettings().getColumns(); c++) {
             for (int r = 0; r < getSettings().getRows(); r++) {
                 controller.clearCell(c, r);
@@ -577,6 +596,8 @@ public class NanoGridUI extends JFrame {
         CellMove move = undoStack.pop();
         applyMoveState(move, move.getBefore());
         redoStack.push(move);
+        moveCount = Math.max(0, moveCount - 1);
+        updateUndoRedoState();
         updateAfterUndoRedo(" (undo)");
     }
 
@@ -588,7 +609,14 @@ public class NanoGridUI extends JFrame {
         CellMove move = redoStack.pop();
         applyMoveState(move, move.getAfter());
         undoStack.push(move);
+        moveCount++;
+        updateUndoRedoState();
         updateAfterUndoRedo(" (redo)");
+    }
+
+    private void updateUndoRedoState() {
+        undoAction.setEnabled(!undoStack.isEmpty());
+        redoAction.setEnabled(!redoStack.isEmpty());
     }
 
     private void applyMoveState(CellMove move, char state) {
@@ -632,6 +660,7 @@ public class NanoGridUI extends JFrame {
         undoStack.push(move);
         redoStack.clear();
         moveCount++;
+        updateUndoRedoState();
         statusLabel.setText("Moves: " + moveCount);
     }
 
@@ -639,6 +668,7 @@ public class NanoGridUI extends JFrame {
         moveCount = 0;
         undoStack.clear();
         redoStack.clear();
+        updateUndoRedoState();
         statusLabel.setText("Moves: 0");
         startedAt = System.currentTimeMillis();
         timerLabel.setText("00:00");
@@ -695,7 +725,10 @@ public class NanoGridUI extends JFrame {
     }
 
     private void verifyExit() {
-        int ans = JOptionPane.showConfirmDialog(this, "Quit? Are you sure?", "Warning",
+        String msg = moveCount > 0
+                ? "You have unsaved progress (" + moveCount + " moves). Quit anyway?"
+                : "Quit? Are you sure?";
+        int ans = JOptionPane.showConfirmDialog(this, msg, "Quit",
                 OK_CANCEL_OPTION, WARNING_MESSAGE);
         if (ans == OK_OPTION) {
             stopTimer();

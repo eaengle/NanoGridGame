@@ -21,8 +21,12 @@
     <li><b>Left-click</b> a cell to apply the selected mode.</li>
     <li><b>Left-click and drag</b> to apply the same state across multiple cells.</li>
     <li><b>Right-click and drag</b> along one row or column to show a span count in the corner.</li>
-    <li><b>Ctrl+Z</b> and <b>Ctrl+Y</b> undo and redo cell changes.</li>
-    <li><b>1</b>, <b>2</b>, <b>3</b>, and <b>4</b> switch between Cycle, Fill, Mark, and Erase modes.</li>
+    <li><b>Ctrl+Z</b> / <b>Ctrl+Y</b> &mdash; Undo / Redo cell changes.</li>
+    <li><b>Ctrl+N</b> &mdash; Open the New Puzzle dialog.</li>
+    <li><b>Ctrl+R</b> &mdash; Refresh (clear all progress on the current puzzle).</li>
+    <li><b>Ctrl+K</b> &mdash; Check how many filled cells are incorrect.</li>
+    <li><b>Ctrl+S</b> / <b>Ctrl+O</b> &mdash; Save / Load game.</li>
+    <li><b>1</b>, <b>2</b>, <b>3</b>, <b>4</b> &mdash; Switch between Cycle, Fill, Mark, and Erase modes.</li>
 </ul>
 
 <h2>Number Clues</h2>
@@ -34,19 +38,28 @@
 
 <h2>Side Buttons</h2>
 <ul>
-    <li><b>Check</b> counts how many filled cells you placed incorrectly.</li>
-    <li><b>Peek</b> briefly reveals the solution for one second.</li>
-    <li><b>Show</b> reveals the full solution.</li>
+    <li><b>Check</b> (Ctrl+K) &mdash; counts how many filled cells you placed incorrectly.</li>
+    <li><b>Peek</b> &mdash; briefly reveals the solution for one second.</li>
+    <li><b>Show</b> &mdash; reveals the full solution.</li>
+    <li><b>Dark</b> &mdash; toggles dark mode on the puzzle board.</li>
 </ul>
 
 <h2>Toolbar</h2>
 <ul>
-    <li><b>New</b> opens puzzle settings and generates a new puzzle.</li>
-    <li><b>Undo</b> and <b>Redo</b> step through recent cell changes.</li>
-    <li><b>Refresh</b> clears your progress on the current puzzle.</li>
-    <li><b>Save</b> opens choices for saving the current game or saving only the puzzle.</li>
-    <li><b>Load</b> opens choices for loading a saved game or loading a puzzle with empty progress.</li>
-    <li><b>?</b> opens these instructions and the About dialog.</li>
+    <li><b>New</b> (Ctrl+N) &mdash; opens puzzle settings and generates a new puzzle.</li>
+    <li><b>Undo</b> (Ctrl+Z) and <b>Redo</b> (Ctrl+Y) &mdash; step through recent cell changes.</li>
+    <li><b>Refresh</b> (Ctrl+R) &mdash; clears your progress on the current puzzle.</li>
+    <li><b>Save</b> (Ctrl+S) &mdash; saves the current game or puzzle to a file.</li>
+    <li><b>Load</b> (Ctrl+O) &mdash; loads a saved game or a puzzle with empty progress.</li>
+    <li><b>?</b> &mdash; opens these instructions and the About dialog.</li>
+</ul>
+
+<h2>New Puzzle Options</h2>
+<ul>
+    <li><b>Difficulty</b> &mdash; controls how densely filled the puzzle is. Easy has more empty cells; Hard is more filled and harder to solve uniquely.</li>
+    <li><b>Symmetric</b> &mdash; generates a puzzle with 180&deg; rotational symmetry, which gives it a more balanced appearance.</li>
+    <li><b>Seed</b> &mdash; enter a whole number to generate the same puzzle again later. Leave blank for a random puzzle each time.</li>
+    <li><b>Columns / Rows</b> &mdash; set the grid size directly.</li>
 </ul>
 </body>
 </html>

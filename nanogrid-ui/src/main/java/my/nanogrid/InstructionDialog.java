@@ -46,6 +46,11 @@ public class InstructionDialog extends javax.swing.JDialog {
     // End of variables declaration//GEN-END:variables
 
     private void initCustom() {
+        setTitle("Instructions");
+        getRootPane().registerKeyboardAction(
+                e -> dispose(),
+                javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_ESCAPE, 0),
+                javax.swing.JComponent.WHEN_IN_FOCUSED_WINDOW);
         URL url = InstructionDialog.class.getResource("/instructions.html");
         if (url != null) {
             try {
@@ -71,7 +76,7 @@ public class InstructionDialog extends javax.swing.JDialog {
             "<li><b>Left-click</b> a filled cell to mark it (X), then again to clear.</li>" +
             "<li><b>Right-click</b> a cell to start a counting guide along a row or column.</li>" +
             "</ul>" +
-            "<p>Use the <b>Hint</b> menu to check your progress, peek at the solution briefly, or reveal it.</p>" +
+            "<p>Use the <b>Check</b>, <b>Peek</b>, and <b>Show</b> buttons in the side panel to check your progress, peek at the solution briefly, or reveal it.</p>" +
             "</body></html>"
         );
     }
