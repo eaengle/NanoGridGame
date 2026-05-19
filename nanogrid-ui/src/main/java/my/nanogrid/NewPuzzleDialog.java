@@ -81,10 +81,11 @@ public class NewPuzzleDialog extends JDialog {
         buttonRow.add(cancelButton);
         getRootPane().setDefaultButton(generateButton);
 
-        JPanel buttons = new JPanel(new BorderLayout(8, 0));
+        progressLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        JPanel buttons = new JPanel(new BorderLayout());
         buttons.setBorder(BorderFactory.createEmptyBorder(4, 8, 8, 8));
-        buttons.add(progressLabel, BorderLayout.WEST);
-        buttons.add(buttonRow, BorderLayout.EAST);
+        buttons.add(progressLabel, BorderLayout.NORTH);
+        buttons.add(buttonRow, BorderLayout.SOUTH);
 
         generateButton.addActionListener(new ActionListener() {
             @Override
