@@ -652,7 +652,6 @@ public class NanoGridUI extends JFrame {
     private void winGame() {
         stopTimer();
         statusLabel.setText("Solved in " + timerLabel.getText() + " with " + moveCount + " moves");
-        JOptionPane.showMessageDialog(this, "You Won the Game", "You Won!", JOptionPane.OK_OPTION);
         displayGame(true);
     }
 

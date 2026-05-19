@@ -8,6 +8,7 @@ import javax.swing.InputMap;
 import javax.swing.JComponent;
 import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
+import javax.swing.Timer;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -42,6 +43,8 @@ class NanoGridBoardView extends JComponent {
     private boolean showSolution;
     private boolean winAnnounced;
     private Point cursorCell;
+    private int winAnimColumn = -1;
+    private Timer winAnimTimer;
 
     NanoGridBoardView(GameController controller, Runnable winHandler, CellMoveListener moveListener) {
         this.controller = controller;
@@ -103,6 +106,11 @@ class NanoGridBoardView extends JComponent {
         measureEnd = null;
         lastAppliedCell = null;
         cursorCell = null;
+        if (winAnimTimer != null) {
+            winAnimTimer.stop();
+            winAnimTimer = null;
+        }
+        winAnimColumn = -1;
         revalidate();
         repaint();
     }
@@ -285,7 +293,8 @@ class NanoGridBoardView extends JComponent {
             for (int r = 0; r < controller.getSettings().getRows(); r++) {
                 Rectangle cell = cellRectangle(c, r);
                 char player = playerCells[c][r];
-                if (showSolution && board.getCell(c, r) == NanoGridBoard.FillChar) {
+                boolean reveal = showSolution || (winAnimColumn >= 0 && c <= winAnimColumn);
+                if (reveal && board.getCell(c, r) == NanoGridBoard.FillChar) {
                     g.setColor(player == NanoGridBoard.FillChar ? theme.correctReveal : theme.missedReveal);
                     g.fillRect(cell.x + 2, cell.y + 2, cell.width - 3, cell.height - 3);
                 } else if (player == NanoGridBoard.FillChar) {
@@ -296,6 +305,26 @@ class NanoGridBoardView extends JComponent {
                 }
             }
         }
+    }
+
+    private void startWinAnimation() {
+        int columns = controller.getSettings().getColumns();
+        int delay = Math.max(16, 600 / columns);
+        winAnimColumn = 0;
+        winAnimTimer = new Timer(delay, null);
+        winAnimTimer.addActionListener(e -> {
+            winAnimColumn++;
+            repaint();
+            if (winAnimColumn >= columns) {
+                winAnimTimer.stop();
+                winAnimTimer = null;
+                winAnimColumn = -1;
+                showSolution = true;
+                winHandler.run();
+            }
+        });
+        winAnimTimer.start();
+        repaint();
     }
 
     private void paintMark(Graphics2D g, Rectangle cell) {
@@ -398,9 +427,8 @@ class NanoGridBoardView extends JComponent {
         repaint();
         moveListener.cellChanged(new CellMove(cell.x, cell.y, before, state));
         if (!winAnnounced && controller.checkWin()) {
-            showSolution = true;
             winAnnounced = true;
-            winHandler.run();
+            startWinAnimation();
         }
     }
 
