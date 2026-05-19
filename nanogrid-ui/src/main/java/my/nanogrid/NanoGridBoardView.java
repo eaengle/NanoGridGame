@@ -337,11 +337,11 @@ class NanoGridBoardView extends JComponent {
     }
 
     private Font getClueFont() {
-        return new Font("Segoe UI", Font.BOLD, Math.max(12, Math.min(18, cellSize / 2 + 4)));
+        return new Font(Font.SANS_SERIF, Font.BOLD, Math.max(12, Math.min(18, cellSize / 2 + 4)));
     }
 
     private Font getMeasureFont() {
-        return new Font("Segoe UI", Font.BOLD, 22);
+        return new Font(Font.SANS_SERIF, Font.BOLD, 22);
     }
 
     private class BoardMouseListener extends MouseAdapter {
