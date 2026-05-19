@@ -145,6 +145,11 @@ public class NanoGridUI extends JFrame {
         resetSessionStats();
     }
 
+    void applyAfterGeneration() {
+        redraw();
+        resetSessionStats();
+    }
+
     void redraw() {
         if (boardView == null) {
             installBoardView();

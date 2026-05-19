@@ -3,10 +3,13 @@ package my.nanogrid;
 import nanogridgame.NanoGridParameters;
 import nanogridgame.PuzzleDifficulty;
 
+import nanogridgame.NanoGridGame;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.concurrent.ExecutionException;
 
 public class NewPuzzleDialog extends JDialog {
 
@@ -36,6 +39,10 @@ public class NewPuzzleDialog extends JDialog {
             }
         }
     };
+
+    private final JButton generateButton = new JButton("Generate");
+    private final JButton cancelButton = new JButton("Cancel");
+    private final JLabel progressLabel = new JLabel(" ");
 
     private NanoGridUI ui;
 
@@ -69,20 +76,23 @@ public class NewPuzzleDialog extends JDialog {
         addRow(form, row, "Seed", seedField);
         seedField.setToolTipText("Optional: enter a whole number for a reproducible puzzle");
 
-        JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 8));
-        JButton ok = new JButton("Generate");
-        JButton cancel = new JButton("Cancel");
-        buttons.add(ok);
-        buttons.add(cancel);
-        getRootPane().setDefaultButton(ok);
+        JPanel buttonRow = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));
+        buttonRow.add(generateButton);
+        buttonRow.add(cancelButton);
+        getRootPane().setDefaultButton(generateButton);
 
-        ok.addActionListener(new ActionListener() {
+        JPanel buttons = new JPanel(new BorderLayout(8, 0));
+        buttons.setBorder(BorderFactory.createEmptyBorder(4, 8, 8, 8));
+        buttons.add(progressLabel, BorderLayout.WEST);
+        buttons.add(buttonRow, BorderLayout.EAST);
+
+        generateButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 apply();
             }
         });
-        cancel.addActionListener(new ActionListener() {
+        cancelButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 setVisible(false);
@@ -161,7 +171,7 @@ public class NewPuzzleDialog extends JDialog {
     }
 
     private void apply() {
-        NanoGridParameters settings = new NanoGridParameters(ui.getController().getSettings());
+        final NanoGridParameters settings = new NanoGridParameters(ui.getController().getSettings());
         settings.setColumns(Integer.parseInt(colSpinner.getValue().toString()));
         settings.setRows(Integer.parseInt(rowSpinner.getValue().toString()));
         settings.setDifficulty((PuzzleDifficulty) difficultyCombo.getSelectedItem());
@@ -177,7 +187,30 @@ public class NewPuzzleDialog extends JDialog {
                 return;
             }
         }
-        setVisible(false);
-        ui.reset(settings);
+
+        generateButton.setEnabled(false);
+        cancelButton.setEnabled(false);
+        progressLabel.setText("Generating...");
+
+        new SwingWorker<NanoGridGame, Void>() {
+            @Override
+            protected NanoGridGame doInBackground() {
+                return new NanoGridGame(settings);
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    NanoGridGame game = get();
+                    ui.getController().installGame(game, settings);
+                    setVisible(false);
+                    ui.applyAfterGeneration();
+                } catch (InterruptedException | ExecutionException ex) {
+                    progressLabel.setText("Failed.");
+                    generateButton.setEnabled(true);
+                    cancelButton.setEnabled(true);
+                }
+            }
+        }.execute();
     }
 }

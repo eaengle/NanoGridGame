@@ -21,6 +21,11 @@ public class GameController {
         game = new NanoGridGame(settings);
     }
 
+    void installGame(NanoGridGame newGame, NanoGridParameters newSettings) {
+        this.game = newGame;
+        this.settings = newSettings;
+    }
+
     public void setSettings(NanoGridParameters newSettings) {
         this.settings = newSettings;
     }
