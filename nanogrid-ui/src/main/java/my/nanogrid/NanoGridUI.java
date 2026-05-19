@@ -86,6 +86,7 @@ public class NanoGridUI extends JFrame {
 
         createActions();
         setTitle("Nano Grid");
+        setIconImages(NanoGridIcon.createIconImages());
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         addWindowListener(new java.awt.event.WindowAdapter() {
             @Override
