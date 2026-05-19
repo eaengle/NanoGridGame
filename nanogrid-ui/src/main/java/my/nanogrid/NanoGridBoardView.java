@@ -138,13 +138,19 @@ class NanoGridBoardView extends JComponent {
     }
 
     private void paintClues(Graphics2D g) {
+        ColorTheme theme = ThemeManager.current();
         g.setFont(getClueFont());
-        g.setColor(ThemeManager.current().text);
         FontMetrics metrics = g.getFontMetrics();
         Integer[][] rowCounts = controller.getBoard().getRowCounts();
         Integer[][] columnCounts = controller.getBoard().getColumnCounts();
+        char[][] playerCells = controller.getPlayColumns();
+        int columns = controller.getSettings().getColumns();
+        int rows = controller.getSettings().getRows();
 
         for (int r = 0; r < rowCounts.length; r++) {
+            char[] rowCells = new char[columns];
+            for (int c = 0; c < columns; c++) rowCells[c] = playerCells[c][r];
+            g.setColor(matchesClue(rowCells, rowCounts[r]) ? theme.satisfiedText : theme.text);
             String text = join(rowCounts[r], " ");
             int x = boardBounds.x - 10 - metrics.stringWidth(text);
             int y = boardBounds.y + r * cellSize + (cellSize + metrics.getAscent() - metrics.getDescent()) / 2;
@@ -152,8 +158,12 @@ class NanoGridBoardView extends JComponent {
         }
 
         for (int c = 0; c < columnCounts.length; c++) {
+            char[] colCells = new char[rows];
+            for (int r = 0; r < rows; r++) colCells[r] = playerCells[c][r];
+            boolean satisfied = matchesClue(colCells, columnCounts[c]);
             Integer[] counts = columnCounts[c];
             int startY = boardBounds.y - 8 - (counts.length - 1) * metrics.getHeight();
+            g.setColor(satisfied ? theme.satisfiedText : theme.text);
             for (int i = 0; i < counts.length; i++) {
                 String text = counts[i].toString();
                 int x = boardBounds.x + c * cellSize + (cellSize - metrics.stringWidth(text)) / 2;
@@ -161,6 +171,23 @@ class NanoGridBoardView extends JComponent {
                 g.drawString(text, x, y);
             }
         }
+    }
+
+    private boolean matchesClue(char[] cells, Integer[] clue) {
+        int runIdx = 0;
+        int run = 0;
+        for (char cell : cells) {
+            if (cell == NanoGridBoard.FillChar) {
+                run++;
+            } else if (run > 0) {
+                if (runIdx >= clue.length || run != clue[runIdx++]) return false;
+                run = 0;
+            }
+        }
+        if (run > 0) {
+            if (runIdx >= clue.length || run != clue[runIdx++]) return false;
+        }
+        return runIdx == clue.length;
     }
 
     private String join(Integer[] values, String delimiter) {

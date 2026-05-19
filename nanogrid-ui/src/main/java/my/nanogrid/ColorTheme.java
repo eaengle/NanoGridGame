@@ -15,11 +15,12 @@ class ColorTheme {
     final Color correctReveal;
     final Color missedReveal;
     final Color text;
+    final Color satisfiedText;
     final Color measureText;
 
     private ColorTheme(Color background, Color clueBackground, Color gridLine, Color gridLineStrong,
             Color fill, Color mark, Color hover, Color measure,
-            Color correctReveal, Color missedReveal, Color text, Color measureText) {
+            Color correctReveal, Color missedReveal, Color text, Color satisfiedText, Color measureText) {
         this.background = background;
         this.clueBackground = clueBackground;
         this.gridLine = gridLine;
@@ -31,6 +32,7 @@ class ColorTheme {
         this.correctReveal = correctReveal;
         this.missedReveal = missedReveal;
         this.text = text;
+        this.satisfiedText = satisfiedText;
         this.measureText = measureText;
     }
 
@@ -46,6 +48,7 @@ class ColorTheme {
             new Color(52, 151, 93),
             new Color(34, 45, 56),
             new Color(42, 50, 60),
+            new Color(137, 143, 150),
             Color.WHITE
     );
 
@@ -61,6 +64,7 @@ class ColorTheme {
             new Color(50, 170, 95),
             new Color(85, 100, 118),
             new Color(190, 202, 218),
+            new Color(105, 112, 122),
             new Color(215, 225, 242)
     );
 }
