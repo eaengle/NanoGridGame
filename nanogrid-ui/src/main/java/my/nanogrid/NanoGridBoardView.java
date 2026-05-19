@@ -11,6 +11,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Composite;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.FontMetrics;
@@ -19,10 +20,12 @@ import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
+import java.awt.Shape;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.geom.Area;
 
 class NanoGridBoardView extends JComponent {
 
@@ -190,10 +193,152 @@ class NanoGridBoardView extends JComponent {
         ColorTheme theme = ThemeManager.current();
         g.setColor(theme.background);
         g.fillRect(0, 0, getWidth(), getHeight());
+        paintMarginArtwork(g);
         g.setColor(theme.clueBackground);
         g.fillRect(boardBounds.x - clueWidth, boardBounds.y, clueWidth, boardBounds.height);
         g.fillRect(boardBounds.x, boardBounds.y - clueHeight, boardBounds.width, clueHeight);
         g.fillRect(boardBounds.x - clueWidth, boardBounds.y - clueHeight, clueWidth, clueHeight);
+    }
+
+    private void paintMarginArtwork(Graphics2D g) {
+        int occupiedX = boardBounds.x - clueWidth;
+        int occupiedY = boardBounds.y - clueHeight;
+        int occupiedWidth = boardBounds.width + clueWidth;
+        int occupiedHeight = boardBounds.height + clueHeight;
+
+        Area marginArea = new Area(new Rectangle(0, 0, getWidth(), getHeight()));
+        marginArea.subtract(new Area(new Rectangle(
+                occupiedX - 8,
+                occupiedY - 8,
+                occupiedWidth + 16,
+                occupiedHeight + 16)));
+
+        Shape oldClip = g.getClip();
+        Composite oldComposite = g.getComposite();
+        g.clip(marginArea);
+        try {
+            g.setComposite(java.awt.AlphaComposite.SrcOver);
+            paintPixelCluster(g, Math.max(18, occupiedX / 3), Math.max(18, occupiedY / 3), 5, false);
+            paintPixelCluster(g, getWidth() - 126, Math.max(18, occupiedY / 2), 6, true);
+            paintPixelCluster(g, getWidth() - 154, getHeight() - 132, 5, false);
+            paintPixelCluster(g, Math.max(18, occupiedX / 4), getHeight() - 124, 4, true);
+            paintPixelCluster(g, getWidth() - 102, getHeight() / 2 - 28, 4, false);
+            paintPixelCluster(g, Math.max(22, occupiedX / 2 - 18), getHeight() / 2 + 38, 4, true);
+            paintMiniGrid(g, 22, Math.max(20, occupiedY + 26), 74, 54);
+            paintMiniGrid(g, getWidth() - 112, getHeight() - 86, 82, 50);
+            paintCornerBrackets(g, occupiedX, occupiedY, occupiedWidth, occupiedHeight);
+            paintCircuitTrace(g, occupiedX + occupiedWidth + 28, occupiedY + 18, 88, 58);
+            paintCircuitTrace(g, occupiedX - 116, occupiedY + occupiedHeight + 28, 96, 48);
+            paintCircuitTrace(g, getWidth() - 128, occupiedY + occupiedHeight / 2, 104, 64);
+            paintCircuitTrace(g, 24, occupiedY + occupiedHeight / 2 - 70, 98, 54);
+            paintSoftDots(g);
+        } finally {
+            g.setComposite(oldComposite);
+            g.setClip(oldClip);
+        }
+    }
+
+    private void paintPixelCluster(Graphics2D g, int x, int y, int block, boolean flip) {
+        ColorTheme theme = ThemeManager.current();
+        int[][] cells = {
+                {0, 1}, {1, 0}, {1, 1}, {2, 1}, {3, 0},
+                {0, 3}, {1, 3}, {2, 2}, {3, 3}, {4, 1}, {4, 4}
+        };
+        int step = block + 6;
+        g.setColor(withAlpha(theme.fill, ThemeManager.isDark() ? 42 : 28));
+        for (int i = 0; i < cells.length; i++) {
+            int cx = flip ? 4 - cells[i][0] : cells[i][0];
+            int cy = cells[i][1];
+            g.fillRoundRect(x + cx * step, y + cy * step, block, block, 2, 2);
+        }
+
+        g.setColor(withAlpha(theme.measure, ThemeManager.isDark() ? 64 : 48));
+        g.setStroke(new BasicStroke(1.4f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+        g.drawLine(x + step, y + step, x + 3 * step, y + step);
+        g.drawLine(x + 2 * step, y + 2 * step, x + 2 * step, y + 4 * step);
+        g.drawLine(x, y + 3 * step, x + 3 * step, y + 3 * step);
+    }
+
+    private void paintCircuitTrace(Graphics2D g, int x, int y, int width, int height) {
+        ColorTheme theme = ThemeManager.current();
+        if (x < -width || y < -height || x > getWidth() || y > getHeight()) {
+            return;
+        }
+        g.setColor(withAlpha(theme.measure, ThemeManager.isDark() ? 54 : 38));
+        g.setStroke(new BasicStroke(2f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+        int midY = y + height / 2;
+        g.drawLine(x, midY, x + width / 3, midY);
+        g.drawLine(x + width / 3, midY, x + width / 3, y);
+        g.drawLine(x + width / 3, y, x + width, y);
+        g.drawLine(x + width / 2, midY, x + width / 2, y + height);
+        g.drawLine(x + width / 2, y + height, x + width, y + height);
+
+        g.setColor(withAlpha(theme.mark, ThemeManager.isDark() ? 72 : 50));
+        int node = 7;
+        g.fillOval(x - node / 2, midY - node / 2, node, node);
+        g.fillOval(x + width / 3 - node / 2, y - node / 2, node, node);
+        g.fillOval(x + width - node / 2, y + height - node / 2, node, node);
+    }
+
+    private void paintMiniGrid(Graphics2D g, int x, int y, int width, int height) {
+        ColorTheme theme = ThemeManager.current();
+        if (x < -width || y < -height || x > getWidth() || y > getHeight()) {
+            return;
+        }
+        g.setColor(withAlpha(theme.clueBackground, ThemeManager.isDark() ? 90 : 115));
+        g.fillRoundRect(x, y, width, height, 6, 6);
+        g.setColor(withAlpha(theme.gridLineStrong, ThemeManager.isDark() ? 55 : 45));
+        g.setStroke(new BasicStroke(1f));
+        int cell = 10;
+        for (int gx = x + 8; gx <= x + width - 8; gx += cell) {
+            g.drawLine(gx, y + 7, gx, y + height - 7);
+        }
+        for (int gy = y + 7; gy <= y + height - 7; gy += cell) {
+            g.drawLine(x + 8, gy, x + width - 8, gy);
+        }
+
+        g.setColor(withAlpha(theme.fill, ThemeManager.isDark() ? 64 : 42));
+        g.fillRect(x + 18, y + 17, 9, 9);
+        g.fillRect(x + 38, y + 27, 9, 9);
+        g.fillRect(x + width - 28, y + 17, 9, 9);
+        g.setColor(withAlpha(theme.mark, ThemeManager.isDark() ? 88 : 64));
+        g.setStroke(new BasicStroke(1.8f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+        g.drawLine(x + 18, y + height - 18, x + 27, y + height - 9);
+        g.drawLine(x + 27, y + height - 18, x + 18, y + height - 9);
+    }
+
+    private void paintCornerBrackets(Graphics2D g, int occupiedX, int occupiedY, int occupiedWidth, int occupiedHeight) {
+        ColorTheme theme = ThemeManager.current();
+        g.setColor(withAlpha(theme.gridLineStrong, ThemeManager.isDark() ? 58 : 40));
+        g.setStroke(new BasicStroke(2.2f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+        int len = 34;
+        int gap = 22;
+        drawBracket(g, occupiedX - gap, occupiedY - gap, len, len, 1, 1);
+        drawBracket(g, occupiedX + occupiedWidth + gap, occupiedY - gap, len, len, -1, 1);
+        drawBracket(g, occupiedX - gap, occupiedY + occupiedHeight + gap, len, len, 1, -1);
+        drawBracket(g, occupiedX + occupiedWidth + gap, occupiedY + occupiedHeight + gap, len, len, -1, -1);
+    }
+
+    private void drawBracket(Graphics2D g, int x, int y, int width, int height, int xDir, int yDir) {
+        g.drawLine(x, y, x + xDir * width, y);
+        g.drawLine(x, y, x, y + yDir * height);
+    }
+
+    private void paintSoftDots(Graphics2D g) {
+        Color dot = withAlpha(ThemeManager.current().gridLineStrong, ThemeManager.isDark() ? 30 : 22);
+        g.setColor(dot);
+        int spacing = 34;
+        for (int x = 16; x < getWidth(); x += spacing) {
+            for (int y = 18; y < getHeight(); y += spacing) {
+                if ((x / spacing + y / spacing) % 3 == 0) {
+                    g.fillOval(x, y, 3, 3);
+                }
+            }
+        }
+    }
+
+    private Color withAlpha(Color color, int alpha) {
+        return new Color(color.getRed(), color.getGreen(), color.getBlue(), alpha);
     }
 
     private void paintClues(Graphics2D g) {
