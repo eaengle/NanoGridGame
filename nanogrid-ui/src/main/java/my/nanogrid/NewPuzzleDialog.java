@@ -123,6 +123,9 @@ public class NewPuzzleDialog extends JDialog {
 
     public void setUI(NanoGridUI ui) {
         this.ui = ui;
+        generateButton.setEnabled(true);
+        cancelButton.setEnabled(true);
+        progressLabel.setText(" ");
         updateScreenSizeLimits();
         NanoGridParameters s = ui.getController().getSettings();
         setClampedValue(colSpinner, s.getColumns());
@@ -200,15 +203,16 @@ public class NewPuzzleDialog extends JDialog {
 
             @Override
             protected void done() {
+                generateButton.setEnabled(true);
+                cancelButton.setEnabled(true);
+                progressLabel.setText(" ");
                 try {
                     NanoGridGame game = get();
                     ui.getController().installGame(game, settings);
                     setVisible(false);
                     ui.applyAfterGeneration();
                 } catch (InterruptedException | ExecutionException ex) {
-                    progressLabel.setText("Failed.");
-                    generateButton.setEnabled(true);
-                    cancelButton.setEnabled(true);
+                    progressLabel.setText("Generation failed.");
                 }
             }
         }.execute();
