@@ -18,13 +18,11 @@ public class NewPuzzleDialog extends JDialog {
     private static final int FRAME_WIDTH_ALLOWANCE = 220;
     private static final int FRAME_HEIGHT_ALLOWANCE = 160;
 
+    private final JSpinner colSpinner = new JSpinner(new SpinnerNumberModel(15, 5, 50, 1));
+    private final JSpinner rowSpinner = new JSpinner(new SpinnerNumberModel(15, 5, 35, 1));
     private final JComboBox<PuzzleDifficulty> difficultyCombo = new JComboBox<>(PuzzleDifficulty.values());
     private final JCheckBox symmetricCheckBox = new JCheckBox();
     private final JTextField seedField = new JTextField(10);
-    private final JSpinner colSpinner = new JSpinner(new SpinnerNumberModel(15, 5, 50, 1));
-    private final JSpinner rowSpinner = new JSpinner(new SpinnerNumberModel(15, 5, 35, 1));
-    private JPanel advancedPanel;
-    private JButton advancedToggle;
 
     private NanoGridUI ui;
 
@@ -41,41 +39,20 @@ public class NewPuzzleDialog extends JDialog {
         form.setBorder(BorderFactory.createEmptyBorder(8, 8, 4, 8));
 
         int row = 0;
+        addRow(form, row++, "Columns", colSpinner);
+        addRow(form, row++, "Rows", rowSpinner);
+
+        GridBagConstraints sc = new GridBagConstraints();
+        sc.gridy = row++;
+        sc.gridwidth = 2;
+        sc.fill = GridBagConstraints.HORIZONTAL;
+        sc.insets = new Insets(6, 8, 6, 8);
+        form.add(new JSeparator(), sc);
+
         addRow(form, row++, "Difficulty", difficultyCombo);
         addRow(form, row++, "Symmetric", symmetricCheckBox);
-        addRow(form, row++, "Seed", seedField);
+        addRow(form, row, "Seed", seedField);
         seedField.setToolTipText("Optional: enter a number for a reproducible puzzle");
-
-        advancedToggle = new JButton("Advanced ▾");
-        advancedToggle.setFocusPainted(false);
-        GridBagConstraints tc = new GridBagConstraints();
-        tc.gridy = row++;
-        tc.gridwidth = 2;
-        tc.anchor = GridBagConstraints.WEST;
-        tc.insets = new Insets(6, 8, 2, 8);
-        form.add(advancedToggle, tc);
-
-        advancedPanel = new JPanel(new GridBagLayout());
-        advancedPanel.setVisible(false);
-        int arow = 0;
-        addRow(advancedPanel, arow++, "Columns", colSpinner);
-        addRow(advancedPanel, arow, "Rows", rowSpinner);
-        GridBagConstraints ac = new GridBagConstraints();
-        ac.gridy = row;
-        ac.gridwidth = 2;
-        ac.fill = GridBagConstraints.HORIZONTAL;
-        ac.weightx = 1;
-        form.add(advancedPanel, ac);
-
-        advancedToggle.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                boolean show = !advancedPanel.isVisible();
-                advancedPanel.setVisible(show);
-                advancedToggle.setText(show ? "Advanced ▴" : "Advanced ▾");
-                pack();
-            }
-        });
 
         JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 8));
         JButton ok = new JButton("OK");
@@ -123,11 +100,11 @@ public class NewPuzzleDialog extends JDialog {
         this.ui = ui;
         updateScreenSizeLimits();
         NanoGridParameters s = ui.getController().getSettings();
+        setClampedValue(colSpinner, s.getColumns());
+        setClampedValue(rowSpinner, s.getRows());
         difficultyCombo.setSelectedItem(s.getDifficulty());
         symmetricCheckBox.setSelected(s.isSymmetric());
         seedField.setText(s.isUseSeed() ? String.valueOf(s.getSeed()) : "");
-        setClampedValue(colSpinner, s.getColumns());
-        setClampedValue(rowSpinner, s.getRows());
     }
 
     private void updateScreenSizeLimits() {
@@ -170,12 +147,10 @@ public class NewPuzzleDialog extends JDialog {
 
     private void apply() {
         NanoGridParameters settings = new NanoGridParameters(ui.getController().getSettings());
+        settings.setColumns(Integer.parseInt(colSpinner.getValue().toString()));
+        settings.setRows(Integer.parseInt(rowSpinner.getValue().toString()));
         settings.setDifficulty((PuzzleDifficulty) difficultyCombo.getSelectedItem());
         settings.setSymmetric(symmetricCheckBox.isSelected());
-        if (advancedPanel.isVisible()) {
-            settings.setColumns(Integer.parseInt(colSpinner.getValue().toString()));
-            settings.setRows(Integer.parseInt(rowSpinner.getValue().toString()));
-        }
         String seedText = seedField.getText().trim();
         if (seedText.isEmpty()) {
             settings.clearSeed();
