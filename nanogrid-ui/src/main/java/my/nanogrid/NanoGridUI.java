@@ -25,18 +25,24 @@ import javax.swing.Timer;
 import javax.swing.UIManager;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.BorderLayout;
-import java.awt.Image;
 import javax.swing.BoxLayout;
+import javax.swing.TransferHandler;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.GridBagLayout;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.ActionEvent;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayDeque;
+import java.util.Arrays;
 import java.util.Deque;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import static javax.swing.JOptionPane.OK_CANCEL_OPTION;
 import static javax.swing.JOptionPane.OK_OPTION;
@@ -129,7 +135,13 @@ public class NanoGridUI extends JFrame {
         add(rightArea, BorderLayout.CENTER);
         add(createStatusBar(), BorderLayout.SOUTH);
         installShortcuts();
+        installDragAndDrop();
         setup();
+    }
+
+    private void installDragAndDrop() {
+        TransferHandler handler = new ImageDropHandler();
+        getRootPane().setTransferHandler(handler);
     }
 
     public void setup() {
@@ -182,6 +194,7 @@ public class NanoGridUI extends JFrame {
                 recordMove(move);
             }
         });
+        boardView.setTransferHandler(new ImageDropHandler());
         mainPanel.removeAll();
         mainPanel.add(boardView, BorderLayout.CENTER);
         mainPanel.revalidate();
@@ -784,6 +797,39 @@ public class NanoGridUI extends JFrame {
 
     private void showError(String message) {
         JOptionPane.showMessageDialog(this, message, "Error", JOptionPane.ERROR_MESSAGE);
+    }
+
+    private class ImageDropHandler extends TransferHandler {
+        private final Set<String> imageExts = new HashSet<>(
+                Arrays.asList("png", "jpg", "jpeg", "gif", "bmp"));
+
+        @Override
+        public boolean canImport(TransferSupport support) {
+            if (!support.isDrop()) return false;
+            return support.isDataFlavorSupported(DataFlavor.javaFileListFlavor);
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public boolean importData(TransferSupport support) {
+            if (!canImport(support)) return false;
+            try {
+                List<File> files = (List<File>) support.getTransferable()
+                        .getTransferData(DataFlavor.javaFileListFlavor);
+                if (files.isEmpty()) return false;
+                File file = files.get(0);
+                String name = file.getName();
+                int dot = name.lastIndexOf('.');
+                if (dot < 0) return false;
+                String ext = name.substring(dot + 1).toLowerCase();
+                if (!imageExts.contains(ext)) return false;
+                if (!BackgroundImageManager.loadFile(file)) return false;
+                if (boardView != null) boardView.repaint();
+                return true;
+            } catch (UnsupportedFlavorException | IOException e) {
+                return false;
+            }
+        }
     }
 
     public static void main(String[] args) {
