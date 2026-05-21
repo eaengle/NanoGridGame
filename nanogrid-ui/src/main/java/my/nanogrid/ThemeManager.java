@@ -46,5 +46,11 @@ class ThemeManager {
                 UIManager.put(key, null);
             }
         }
+        // Nimbus caches derived colors in NimbusStyle objects. Reinstalling the
+        // same L&F instance clears that cache so the next updateComponentTreeUI
+        // picks up the correct colors.
+        try {
+            UIManager.setLookAndFeel(UIManager.getLookAndFeel());
+        } catch (javax.swing.UnsupportedLookAndFeelException ignored) {}
     }
 }
