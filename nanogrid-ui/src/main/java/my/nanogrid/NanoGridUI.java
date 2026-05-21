@@ -403,10 +403,10 @@ public class NanoGridUI extends JFrame {
         darkButton.addActionListener(new java.awt.event.ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                ThemeManager.setDark(darkButton.isSelected());
-                if (boardView != null) {
-                    boardView.repaint();
-                }
+                boolean dark = darkButton.isSelected();
+                ThemeManager.setDark(dark);
+                ThemeManager.applySwingTheme(dark);
+                SwingUtilities.updateComponentTreeUI(NanoGridUI.this);
             }
         });
         addSideButton(panel, darkButton);
