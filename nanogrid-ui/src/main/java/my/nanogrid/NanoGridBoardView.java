@@ -26,6 +26,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Area;
+import java.awt.image.BufferedImage;
 
 class NanoGridBoardView extends JComponent {
 
@@ -218,24 +219,43 @@ class NanoGridBoardView extends JComponent {
         g.clip(marginArea);
         try {
             g.setComposite(java.awt.AlphaComposite.SrcOver);
-            paintPixelCluster(g, Math.max(18, occupiedX / 3), Math.max(18, occupiedY / 3), 5, false);
-            paintPixelCluster(g, getWidth() - 126, Math.max(18, occupiedY / 2), 6, true);
-            paintPixelCluster(g, getWidth() - 154, getHeight() - 132, 5, false);
-            paintPixelCluster(g, Math.max(18, occupiedX / 4), getHeight() - 124, 4, true);
-            paintPixelCluster(g, getWidth() - 102, getHeight() / 2 - 28, 4, false);
-            paintPixelCluster(g, Math.max(22, occupiedX / 2 - 18), getHeight() / 2 + 38, 4, true);
-            paintMiniGrid(g, 22, Math.max(20, occupiedY + 26), 74, 54);
-            paintMiniGrid(g, getWidth() - 112, getHeight() - 86, 82, 50);
-            paintCornerBrackets(g, occupiedX, occupiedY, occupiedWidth, occupiedHeight);
-            paintCircuitTrace(g, occupiedX + occupiedWidth + 28, occupiedY + 18, 88, 58);
-            paintCircuitTrace(g, occupiedX - 116, occupiedY + occupiedHeight + 28, 96, 48);
-            paintCircuitTrace(g, getWidth() - 128, occupiedY + occupiedHeight / 2, 104, 64);
-            paintCircuitTrace(g, 24, occupiedY + occupiedHeight / 2 - 70, 98, 54);
-            paintSoftDots(g);
+            if (BackgroundImageManager.hasImage()) {
+                paintImageMargin(g);
+                paintCornerBrackets(g, occupiedX, occupiedY, occupiedWidth, occupiedHeight);
+            } else {
+                paintPixelCluster(g, Math.max(18, occupiedX / 3), Math.max(18, occupiedY / 3), 5, false);
+                paintPixelCluster(g, getWidth() - 126, Math.max(18, occupiedY / 2), 6, true);
+                paintPixelCluster(g, getWidth() - 154, getHeight() - 132, 5, false);
+                paintPixelCluster(g, Math.max(18, occupiedX / 4), getHeight() - 124, 4, true);
+                paintPixelCluster(g, getWidth() - 102, getHeight() / 2 - 28, 4, false);
+                paintPixelCluster(g, Math.max(22, occupiedX / 2 - 18), getHeight() / 2 + 38, 4, true);
+                paintMiniGrid(g, 22, Math.max(20, occupiedY + 26), 74, 54);
+                paintMiniGrid(g, getWidth() - 112, getHeight() - 86, 82, 50);
+                paintCornerBrackets(g, occupiedX, occupiedY, occupiedWidth, occupiedHeight);
+                paintCircuitTrace(g, occupiedX + occupiedWidth + 28, occupiedY + 18, 88, 58);
+                paintCircuitTrace(g, occupiedX - 116, occupiedY + occupiedHeight + 28, 96, 48);
+                paintCircuitTrace(g, getWidth() - 128, occupiedY + occupiedHeight / 2, 104, 64);
+                paintCircuitTrace(g, 24, occupiedY + occupiedHeight / 2 - 70, 98, 54);
+                paintSoftDots(g);
+            }
         } finally {
             g.setComposite(oldComposite);
             g.setClip(oldClip);
         }
+    }
+
+    private void paintImageMargin(Graphics2D g) {
+        BufferedImage img = BackgroundImageManager.getImage();
+        if (img == null) return;
+        double scaleX = (double) getWidth() / img.getWidth();
+        double scaleY = (double) getHeight() / img.getHeight();
+        double scale = Math.max(scaleX, scaleY);
+        int drawW = (int) (img.getWidth() * scale);
+        int drawH = (int) (img.getHeight() * scale);
+        int drawX = (getWidth() - drawW) / 2;
+        int drawY = (getHeight() - drawH) / 2;
+        g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+        g.drawImage(img, drawX, drawY, drawW, drawH, null);
     }
 
     private void paintPixelCluster(Graphics2D g, int x, int y, int block, boolean flip) {

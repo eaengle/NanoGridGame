@@ -25,6 +25,7 @@ import javax.swing.Timer;
 import javax.swing.UIManager;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.BorderLayout;
+import java.awt.Image;
 import javax.swing.BoxLayout;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
@@ -70,6 +71,8 @@ public class NanoGridUI extends JFrame {
     private Action showAction;
     private Action instructionsAction;
     private Action aboutAction;
+    private Action loadBackgroundAction;
+    private Action clearBackgroundAction;
 
     public NanoGridUI() {
         initCustom();
@@ -280,6 +283,42 @@ public class NanoGridUI extends JFrame {
                         JOptionPane.PLAIN_MESSAGE);
             }
         };
+        loadBackgroundAction = new AbstractAction("Load Background...") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                loadBackgroundImage();
+            }
+        };
+        loadBackgroundAction.putValue(Action.SHORT_DESCRIPTION, "Load a background image for the margin area");
+        clearBackgroundAction = new AbstractAction("Clear Background") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                BackgroundImageManager.clearImage();
+                if (boardView != null) {
+                    boardView.repaint();
+                }
+            }
+        };
+        clearBackgroundAction.putValue(Action.SHORT_DESCRIPTION, "Remove the background image");
+    }
+
+    private void loadBackgroundImage() {
+        JFileChooser chooser = new JFileChooser();
+        FileNameExtensionFilter filter = new FileNameExtensionFilter(
+                "Image Files", "png", "jpg", "jpeg", "gif", "bmp");
+        chooser.setFileFilter(filter);
+        int result = chooser.showOpenDialog(this);
+        if (result != JFileChooser.APPROVE_OPTION) {
+            return;
+        }
+        File file = chooser.getSelectedFile();
+        if (!BackgroundImageManager.loadFile(file)) {
+            showError("Could not load image: " + file.getName());
+            return;
+        }
+        if (boardView != null) {
+            boardView.repaint();
+        }
     }
 
     private JPanel createToolBarPanel() {
@@ -299,6 +338,8 @@ public class NanoGridUI extends JFrame {
         toolBar.addSeparator();
         toolBar.add(createPopupButton("Save", "Save game or puzzle", saveGameAction, savePuzzleAction));
         toolBar.add(createPopupButton("Load", "Load game or puzzle", loadGameAction, loadPuzzleAction));
+        toolBar.addSeparator();
+        toolBar.add(createPopupButton("Background", "Background image", loadBackgroundAction, clearBackgroundAction));
         return toolBar;
     }
 
