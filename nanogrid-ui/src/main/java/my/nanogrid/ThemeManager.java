@@ -2,13 +2,10 @@ package my.nanogrid;
 
 import javax.swing.UIManager;
 import java.awt.Color;
-import java.util.HashMap;
-import java.util.Map;
 
 class ThemeManager {
 
     private static ColorTheme current = ColorTheme.LIGHT;
-    private static Map<String, Object> lightDefaults;
 
     private static final String[] THEME_KEYS = {
         "nimbusBase", "nimbusBlueGrey", "control",
@@ -29,16 +26,7 @@ class ThemeManager {
         current = dark ? ColorTheme.DARK : ColorTheme.LIGHT;
     }
 
-    // Applies dark/light color tokens to UIManager so all Swing components
-    // update when the caller follows up with SwingUtilities.updateComponentTreeUI.
     static void applySwingTheme(boolean dark) {
-        if (lightDefaults == null) {
-            lightDefaults = new HashMap<>();
-            for (String key : THEME_KEYS) {
-                Object val = UIManager.get(key);
-                if (val != null) lightDefaults.put(key, val);
-            }
-        }
         if (dark) {
             UIManager.put("nimbusBase",                new Color(24, 34, 48));
             UIManager.put("nimbusBlueGrey",            new Color(42, 50, 60));
@@ -54,8 +42,8 @@ class ThemeManager {
             UIManager.put("nimbusSelectionBackground", new Color(38, 55, 78));
             UIManager.put("info",                      new Color(20, 23, 27));
         } else {
-            for (Map.Entry<String, Object> entry : lightDefaults.entrySet()) {
-                UIManager.put(entry.getKey(), entry.getValue());
+            for (String key : THEME_KEYS) {
+                UIManager.put(key, null);
             }
         }
     }
